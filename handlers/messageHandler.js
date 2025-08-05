@@ -1,6 +1,7 @@
 const commands = require('../commands');
 const logger = require('../utils/logger');
 const config = require('../config/settings');
+const spamDetector = require('../utils/spamDetector');
 
 class MessageHandler {
     constructor() {
@@ -10,6 +11,38 @@ class MessageHandler {
 
     async handleMessage(client, message) {
         try {
+            // Get contact info for spam detection
+            const contact = await message.getContact();
+            
+            // Analyze message for spam/suspicious content
+            if (message.body && !message.fromMe) {
+                const spamAnalysis = spamDetector.analyzeMessage(message.body, contact);
+                
+                if (spamAnalysis.isSpam || spamAnalysis.isSuspicious) {
+                    const chat = await message.getChat();
+                    
+                    // Send warning for suspicious messages
+                    if (spamAnalysis.isSuspicious && !spamAnalysis.isSpam) {
+                        await message.reply('⚠️ *Suspicious content detected.* Please ensure your message follows community guidelines.');
+                        logger.warn(`Suspicious message from ${contact.number || contact.id.user}: ${spamAnalysis.reasons.join(', ')}`);
+                    }
+                    
+                    // Handle spam messages
+                    if (spamAnalysis.isSpam) {
+                        spamDetector.addSpamWarning(contact.id.user);
+                        
+                        if (spamDetector.shouldAutoBlock(spamAnalysis, contact.id.user)) {
+                            await message.reply('🚫 *Spam detected. Message blocked.* Repeated violations may result in removal from group.');
+                            logger.error(`SPAM BLOCKED from ${contact.number || contact.id.user}: ${spamAnalysis.reasons.join(', ')}`);
+                            return; // Block the message processing
+                        } else {
+                            await message.reply('⚠️ *Potential spam detected.* Please review your message content.');
+                            logger.warn(`Potential spam from ${contact.number || contact.id.user}: ${spamAnalysis.reasons.join(', ')}`);
+                        }
+                    }
+                }
+            }
+
             // Skip if message is empty or not a command
             if (!message.body || !message.body.startsWith(this.commandPrefix)) {
                 return;
@@ -26,7 +59,6 @@ class MessageHandler {
 
             // Get chat and sender info
             const chat = await message.getChat();
-            const contact = await message.getContact();
             
             // Log command usage
             logger.info(`Command "${commandName}" used by ${contact.number || contact.id.user} in ${chat.isGroup ? 'group' : 'private'} chat`);

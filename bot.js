@@ -10,19 +10,7 @@ class AfshuuBot {
             authStrategy: new LocalAuth({
                 clientId: "afshuu-bot"
             }),
-            puppeteer: {
-                headless: true,
-                args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-accelerated-2d-canvas',
-                    '--no-first-run',
-                    '--no-zygote',
-                    '--single-process',
-                    '--disable-gpu'
-                ]
-            }
+            puppeteer: config.PUPPETEER_OPTIONS
         });
 
         this.initializeBot();
@@ -81,8 +69,30 @@ class AfshuuBot {
             }
         });
 
-        this.client.on('group_join', (notification) => {
-            logger.info(`Someone joined group: ${notification.chatId}`);
+        this.client.on('group_join', async (notification) => {
+            try {
+                const chat = await notification.getChat();
+                const contact = await this.client.getContactById(notification.id.participant);
+                
+                const welcomeMessage = `🎉 *Welcome to ${chat.name}!*
+
+👋 Hi @${contact.id.user}! Welcome to our group!
+
+📋 *Quick Info:*
+• Type *.menu* to see all bot commands
+• Be respectful and follow group rules
+• Enjoy your time here!
+
+🤖 *Afshuu Bot* is here to help you!`;
+
+                await chat.sendMessage(welcomeMessage, {
+                    mentions: [contact.id._serialized]
+                });
+                
+                logger.info(`Welcome message sent to ${contact.number || contact.id.user} in group ${chat.name}`);
+            } catch (error) {
+                logger.error(`Error sending welcome message: ${error.message}`);
+            }
         });
 
         this.client.on('group_leave', (notification) => {
