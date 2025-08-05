@@ -16,15 +16,40 @@ class AfshuuBot {
 
     initializeBot() {
         this.client.on('qr', (qr) => {
-            console.log('\n=== AFSHUU BOT SETUP ===');
-            console.log('Scan this QR code with your WhatsApp to connect:');
+            console.log('\n🌟═══════════════════════════════════════════🌟');
+            console.log('🤖           AFSHUU BOT SETUP               🤖');
+            console.log('🌟═══════════════════════════════════════════🌟');
+            console.log('📱 Scan this QR code with your WhatsApp:');
+            console.log('');
             qrcode.generate(qr, { small: true });
+            console.log('');
+            console.log('✨ Features Ready:');
+            console.log('🎵 Audio Download from any platform');
+            console.log('🛡️  Auto Spam/Scam Detection');
+            console.log('👋 Auto Welcome Messages');
+            console.log('📚 Interactive Tutorial System');
+            console.log('🌟═══════════════════════════════════════════🌟');
             logger.info('QR Code generated for authentication');
         });
 
         this.client.on('ready', () => {
-            console.log('\n🤖 Afshuu Bot is ready and online!');
-            logger.info('Afshuu Bot initialized successfully');
+            const readyMessage = `
+🎉━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🎉
+✨            AFSHUU BOT            ✨
+🌟          NOW ONLINE!           🌟
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🚀 Status: Fully Operational
+🎵 Audio Downloads: Ready
+🛡️  Spam Detection: Active
+👋 Auto Welcome: Enabled
+📚 Tutorial System: Available
+
+🔥 Ready to serve with enhanced features!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+            
+            console.log(readyMessage);
+            logger.info('Afshuu Bot initialized successfully with enhanced features');
             
             // Send startup notification to owner if configured
             if (config.OWNER_NUMBER) {
@@ -72,22 +97,78 @@ class AfshuuBot {
                 const chat = await notification.getChat();
                 const contact = await this.client.getContactById(notification.id.participant);
                 
-                const welcomeMessage = `🎉 *Welcome to ${chat.name}!*
+                const welcomeMessages = [
+                    `🎊✨ *WELCOME TO ${chat.name}!* ✨🎊
 
-👋 Hi @${contact.id.user}! Welcome to our group!
+🌟 Hey there @${contact.id.user}! 🌟
+🎉 We're thrilled to have you join our amazing community!
 
-📋 *Quick Info:*
-• Type *.menu* to see all bot commands
-• Be respectful and follow group rules
-• Enjoy your time here!
+🚀 *What can I do for you?*
+🎵 Download audio from YouTube, Spotify & more
+📚 Interactive tutorial: Type *.tutorial*
+🛡️  Advanced spam protection
+📱 Smart group management
+🎮 Fun commands & utilities
 
-🤖 *Afshuu Bot* is here to help you!`;
+💫 *Quick Start:*
+• *.menu* - See all commands
+• *.tutorial* - Interactive guide
+• *.help* - Get assistance
 
-                await chat.sendMessage(welcomeMessage, {
+🔥 Let's make this group awesome together!
+🤖 *Powered by Afshuu Bot*`,
+
+                    `🌈 *Welcome Aboard* @${contact.id.user}! 🌈
+
+🎭 You've just entered the coolest group: *${chat.name}*
+
+✨ *Your journey begins now:*
+🎯 Explore commands with *.menu*
+🎓 New here? Try *.tutorial* for a guided tour!
+🎵 Love music? I can download audio from any platform!
+🛡️  Don't worry about spam - I've got your back!
+
+🌟 Ready to experience the magic? Let's go! 🚀`,
+
+                    `🎪 *GRAND ENTRANCE!* 🎪
+Welcome @${contact.id.user} to *${chat.name}*!
+
+🎨 You've unlocked a world of possibilities:
+🎧 Audio downloads from everywhere
+🎯 Smart bot interactions  
+🎪 Fun group activities
+🛡️  Ultimate protection system
+
+🎁 *Special for newcomers:*
+Type *.tutorial* for your personal guide!
+Type *.welcome* to see this message again!
+
+🌟 Let the adventure begin! 🌟`
+                ];
+
+                const randomWelcome = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+
+                await chat.sendMessage(randomWelcome, {
                     mentions: [contact.id._serialized]
                 });
                 
-                logger.info(`Welcome message sent to ${contact.number || contact.id.user} in group ${chat.name}`);
+                // Send tutorial hint after 5 seconds
+                setTimeout(async () => {
+                    try {
+                        await chat.sendMessage(`💡 *Psst, @${contact.id.user}!* 
+                        
+Don't forget to check out our interactive tutorial:
+📚 Type *.tutorial* to get started!
+
+🎯 Or jump right in with *.menu* to see all commands!`, {
+                            mentions: [contact.id._serialized]
+                        });
+                    } catch (error) {
+                        logger.error(`Error sending tutorial hint: ${error.message}`);
+                    }
+                }, 5000);
+                
+                logger.info(`Enhanced welcome message sent to ${contact.number || contact.id.user} in group ${chat.name}`);
             } catch (error) {
                 logger.error(`Error sending welcome message: ${error.message}`);
             }
