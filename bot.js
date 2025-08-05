@@ -1,4 +1,4 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, NoAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const messageHandler = require('./handlers/messageHandler');
 const logger = require('./utils/logger');
@@ -7,9 +7,7 @@ const config = require('./config/settings');
 class AfshuuBot {
     constructor() {
         this.client = new Client({
-            authStrategy: new LocalAuth({
-                clientId: "afshuu-bot"
-            }),
+            authStrategy: new NoAuth(),
             puppeteer: config.PUPPETEER_OPTIONS
         });
 
@@ -112,11 +110,32 @@ class AfshuuBot {
     async start() {
         try {
             console.log('🚀 Starting Afshuu Bot...');
+            
+            // Clean up any existing Chromium processes
+            await this.cleanupChromeProcesses();
+            
             await this.client.initialize();
         } catch (error) {
             console.error('Failed to start bot:', error);
             logger.error('Failed to start bot: ' + error.message);
+            
+            // Attempt cleanup before exit
+            await this.cleanupChromeProcesses();
             process.exit(1);
+        }
+    }
+
+    async cleanupChromeProcesses() {
+        try {
+            const { exec } = require('child_process');
+            await new Promise((resolve) => {
+                exec('pkill -f "chromium\\|chrome" || true', () => resolve());
+            });
+            
+            // Small delay to allow cleanup
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (error) {
+            console.log('Cleanup attempt completed');
         }
     }
 
@@ -124,10 +143,17 @@ class AfshuuBot {
         try {
             console.log('🛑 Stopping Afshuu Bot...');
             await this.client.destroy();
+            
+            // Clean up Chromium processes
+            await this.cleanupChromeProcesses();
+            
             logger.info('Bot stopped successfully');
         } catch (error) {
             console.error('Error stopping bot:', error);
             logger.error('Error stopping bot: ' + error.message);
+            
+            // Force cleanup even if destroy fails
+            await this.cleanupChromeProcesses();
         }
     }
 }

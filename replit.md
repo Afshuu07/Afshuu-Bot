@@ -8,6 +8,16 @@ Afshuu Bot is a WhatsApp automation bot built using the whatsapp-web.js library.
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+**August 5, 2025**
+- Fixed Chromium profile lock issue that was preventing the bot from starting
+- Switched from LocalAuth to NoAuth strategy to avoid session conflicts
+- Simplified Puppeteer configuration to reduce browser launch conflicts
+- Updated Chrome/Chromium arguments for better compatibility in containerized environments
+- Added process cleanup mechanisms to prevent browser profile conflicts
+- Bot now successfully launches and displays QR code for WhatsApp authentication
+
 ## System Architecture
 
 ### Core Architecture
