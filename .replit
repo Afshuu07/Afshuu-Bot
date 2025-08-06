@@ -1,23 +1,7 @@
-modules = ["nodejs-20", "python-3.11"]
-ye
+modules = ["nodejs-20"]
+
 [nix]
 channel = "stable-25_05"
-packages = [
-  "alsa-lib",
-  "chromium",
-  "glib",
-  "gtk3",
-  "libdrm",
-  "libxkbcommon",
-  "mesa",
-  "nss",
-  "xorg.libXScrnSaver",
-  "xorg.libXcomposite",
-  "xorg.libXdamage",
-  "xorg.libXrandr",
-  "yt-dlp",
-  "ffmpeg",
-]
 
 [workflows]
 runButton = "Project"
