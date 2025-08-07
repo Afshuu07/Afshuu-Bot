@@ -99,9 +99,9 @@ Hello! I'm your intelligent WhatsApp assistant with superpowers! 🚀
 
     // WhatsApp limit: tag max ~20 per message
     const chunkSize = 20;
-    for (let i = 0; i < mentions.length; i += chunkSize) {
+    for (let i = 0; i < mentions.length; i += chunkSize) 
         const mentionChunk = mentions.slice(i, i + chunkSize);
-        const text = `${customText}\n\n${mentionChunk.map(id => `@${id.split('@')[0]}`).join(' ')}`;
+        const text = `customText\n\nmentionChunk.map(id => `@id.split('@')[0]`).join(' ')`;
         await client.sendTextWithMentions(message.chatId, text);
     }
 }
