@@ -84,7 +84,27 @@ Hello! I'm your intelligent WhatsApp assistant with superpowers! 🚀
 • *.welcome* - Show welcome message
 
 👥 *Group Commands:*
-• *.tagall [message]* - Tag everyone
+• if (message.body.startsWith('.tagall')) {
+    if (!message.isGroupMsg) {
+        client.sendText(message.from, '*❌ This command only works in groups.*');
+        return;
+    }
+
+    const chat = await client.getChatById(message.chatId);
+    const participants = chat.participants;
+    const senderName = message.notifyName || "Someone";
+    const customText = message.body.slice(7).trim() || '📢 Attention everyone!';
+
+    const mentions = participants.map(p => p.id._serialized);
+
+    // WhatsApp limit: tag max ~20 per message
+    const chunkSize = 20;
+    for (let i = 0; i < mentions.length; i += chunkSize) {
+        const mentionChunk = mentions.slice(i, i + chunkSize);
+        const text = `${customText}\n\n${mentionChunk.map(id => `@${id.split('@')[0]}`).join(' ')}`;
+        await client.sendTextWithMentions(message.chatId, text);
+    }
+}
 • *.promote* - Group management
 • *.rules* - Display group rules
 
