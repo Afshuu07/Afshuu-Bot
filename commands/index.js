@@ -82,11 +82,9 @@ Hello! I'm your intelligent WhatsApp assistant with superpowers! 🚀
 • *.alive* - Check bot status
 • *.help* - Get assistance
 • *.welcome* - Show welcome message
-👥 *Group Commands:*
-• *.tagall [message]* - Tag all members
-• *.welcome [message]* - Custom welcome message
-• *.goodbye [message]* - Custom goodbye message
 
+👥 *Group Commands:*
+• *.tagall [message]* - Tag everyone
 • *.promote* - Group management
 • *.rules* - Display group rules
 
@@ -522,33 +520,51 @@ Platform: WhatsApp Web 📱
         groupOnly: true,
         async execute(client, message, args, context) {
             const { chat, contact } = context;
+            
+            if (!chat.isGroup) {
+                await message.reply('❌ This command can only be used in groups!');
+                return;
+            }
 
-try {
-  const participants = chat.participants;
-  const customMessage = args.join(' ');
-  const tagMessageBase = customMessage
-    
-     
+            try {
+                const participants = chat.participants;
+                if (participants.length > 100) {
+                    await message.reply('⚠️ Group too large! Maximum 100 members can be tagged at once.');
+                    return;
+                }
 
-  const chunkSize = 90; // Safe limit <100
-  for (let i = 0; i < participants.length; i += chunkSize) {
-    const chunk = participants.slice(i, i + chunkSize);
-    const mentions = chunk.map(p => p.id._serialized);
-     
-        
+                // Create custom message if provided
+                const customMessage = args.join(' ');
+                let tagMessage = customMessage ? 
+                    `📢 *${customMessage}* 📢\n\n🎯 *Attention Everyone!* 🎯\n\n` : 
+                    `📢 *GROUP ANNOUNCEMENT* 📢\n\n🎯 *Everyone, please pay attention!* 🎯\n\n`;
+                
+                // Add tagged members
+                const mentions = [];
+                participants.forEach(participant => {
+                    if (participant.id._serialized !== contact.id._serialized) {
+                        tagMessage += `👤 @${participant.id.user} `;
+                        mentions.push(participant.id._serialized);
+                    }
+                });
 
-    await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5s delay between chunks
-  }
+                tagMessage += `\n\n🤖 *Tagged by:* @${contact.id.user}`;
+                tagMessage += `\n⏰ *Time:* ${new Date().toLocaleString()}`;
+                tagMessage += `\n🌟 *Powered by Afshuu Bot* 🌟`;
+                
+                mentions.push(contact.id._serialized);
 
-  logger.info ( TagAll command executed by contact.number || {contact.id.user} ),
-} catch (error) {
-  logger.error(❌ Error in tagall command: {error.message});
-  await message.reply('⚠ Error occurred while tagging members. Please try again.');
-}
-    
-
-    
-     
+                await chat.sendMessage(tagMessage, {
+                    mentions: mentions
+                });
+                
+                logger.info(`TagAll command executed by ${contact.number || contact.id.user} in group ${chat.name}`);
+            } catch (error) {
+                logger.error(`Error in tagall command: ${error.message}`);
+                await message.reply('❌ Error occurred while tagging members. Please try again.');
+            }
+        }
+    },
 
     sticker: {
         description: 'Convert images to stickers',
@@ -557,7 +573,7 @@ try {
         groupOnly: false,
         async execute(client, message, args, context) {
             if (!message.hasQuotedMsg) {
-                await message.reply(🎨 *Sticker Maker* 🎨)
+                await message.reply(`🎨 *Sticker Maker* 🎨
 
 🎯 *Usage:* Reply to an image with *.sticker*
 
@@ -567,11 +583,11 @@ try {
 3. Get your custom sticker!
 
 🌟 *Supported formats:* JPG, PNG, GIF
-💡 *Pro Tip:* Square images work best!`
-            
-        
+💡 *Pro Tip:* Square images work best!`);
+                return;
+            }
 
-         = await message.getQuotedMessage();
+            const quotedMsg = await message.getQuotedMessage();
             
             if (!quotedMsg.hasMedia) {
                 await message.reply('❌ Please reply to an image to create a sticker!');
