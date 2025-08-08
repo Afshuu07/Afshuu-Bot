@@ -82,29 +82,11 @@ Hello! I'm your intelligent WhatsApp assistant with superpowers! 🚀
 • *.alive* - Check bot status
 • *.help* - Get assistance
 • *.welcome* - Show welcome message
-
 👥 *Group Commands:*
-• if (message.body.startsWith('.tagall')) {
-    if (!message.isGroupMsg) {
-        client.sendText(message.from, '*❌ This command only works in groups.*');
-        return;
-    }
+• *.tagall [message]* - Tag all members
+• *.welcome [message]* - Custom welcome message
+• *.goodbye [message]* - Custom goodbye message
 
-    const chat = await client.getChatById(message.chatId);
-    const participants = chat.participants;
-    const senderName = message.notifyName || "Someone";
-    const customText = message.body.slice(7).trim() || '📢 Attention everyone!';
-
-    const mentions = participants.map(p => p.id._serialized);
-
-    // WhatsApp limit: tag max ~20 per message
-    const chunkSize = 20;
-    for (let i = 0; i < mentions.length; i += chunkSize) 
-        const mentionChunk = mentions.slice(i, i + chunkSize);
-        const text = customText\n\nmentionChunk.map(id => @id.split('@')[0]`.join(' ')`;
-        await client.sendTextWithMentions(message.chatId, text);
-    }
-}
 • *.promote* - Group management
 • *.rules* - Display group rules
 
@@ -540,37 +522,48 @@ Platform: WhatsApp Web 📱
         groupOnly: true,
         async execute(client, message, args, context) {
             const { chat, contact } = context;
-            
-            if (!chat.isGroup) {
-                await message.reply('❌ This command can only be used in groups!');
-                return;
-            }
 
-            try {
-                const participants = chat.participants;
-                if (participants.length > 100) {
-                    await message.reply('⚠️ Group too large! Maximum 100 members can be tagged at once.');
-                    return;
-                }
+try {
+  const participants = chat.participants;
+  const customMessage = args.join(' ');
+  const tagMessageBase = customMessage
+    
+     
+
+  const chunkSize = 90; // Safe limit <100
+  for (let i = 0; i < participants.length; i += chunkSize) {
+    const chunk = participants.slice(i, i + chunkSize);
+    const mentions = chunk.map(p => p.id._serialized);
+    
+
+    await 
+        chat.sendMessage ($)tagMessageBase\n\n${mentionText} ,
+            mentions,
+                }));
+        
+
+    await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5s delay between chunks
+  }
+
+  logger.info(TagAll command executed by ${contact.number || contact.id.user} in group ${chat.name});
+
+} catch (error) {
+  logger.error(❌ Error in tagall command: ${error.message});
+  await message.reply('⚠ Error occurred while tagging members. Please try again.');
+}
+    
+
+    
+     
 
                 // Create custom message if provided
                 const customMessage = args.join(' ');
                 let tagMessage = customMessage ? 
-                    `📢 *${customMessage}* 📢\n\n🎯 *Attention Everyone!* 🎯\n\n` : 
-                    `📢 *GROUP ANNOUNCEMENT* 📢\n\n🎯 *Everyone, please pay attention!* 🎯\n\n`;
-                
-                // Add tagged members
-                const mentions = [];
-                participants.forEach(participant => {
-                    if (participant.id._serialized !== contact.id._serialized) {
-                        tagMessage += `👤 @${participant.id.user} `;
-                        mentions.push(participant.id._serialized);
-                    }
-                });
-
-                tagMessage += `\n\n🤖 *Tagged by:* @${contact.id.user}`;
-                tagMessage += `\n⏰ *Time:* ${new Date().toLocaleString()}`;
-                tagMessage += `\n🌟 *Powered by Afshuu Bot* 🌟`;
+                    
+ :📢 *GROUP ANNOUNCEMENT*\n\n🔔 Attention Everyone!
+                    // Add tagged members = [];
+                tagMessage = \n\n Tagged by @{contact.id.user} tagMessage += \n Time : new Date().toLocaleString();
+                tagMessage += \n 🌟 *Powered by Afshuu Bot* 🌟
                 
                 mentions.push(contact.id._serialized);
 
@@ -578,9 +571,9 @@ Platform: WhatsApp Web 📱
                     mentions: mentions
                 });
                 
-                logger.info(`TagAll command executed by ${contact.number || contact.id.user} in group ${chat.name}`);
+                logger.info(TagAll command executed by {contact.number || contact.id.user} in group {chat.name});
             } catch (error) {
-                logger.error(`Error in tagall command: ${error.message}`);
+                logger.error(Error in tagall command: {error.message});
                 await message.reply('❌ Error occurred while tagging members. Please try again.');
             }
         }
@@ -593,7 +586,7 @@ Platform: WhatsApp Web 📱
         groupOnly: false,
         async execute(client, message, args, context) {
             if (!message.hasQuotedMsg) {
-                await message.reply(`🎨 *Sticker Maker* 🎨
+                await message.reply(🎨 *Sticker Maker* 🎨)
 
 🎯 *Usage:* Reply to an image with *.sticker*
 
@@ -603,11 +596,11 @@ Platform: WhatsApp Web 📱
 3. Get your custom sticker!
 
 🌟 *Supported formats:* JPG, PNG, GIF
-💡 *Pro Tip:* Square images work best!`);
-                return;
-            }
+💡 *Pro Tip:* Square images work best!`
+            
+        
 
-            const quotedMsg = await message.getQuotedMessage();
+         = await message.getQuotedMessage();
             
             if (!quotedMsg.hasMedia) {
                 await message.reply('❌ Please reply to an image to create a sticker!');
