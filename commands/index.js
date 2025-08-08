@@ -534,50 +534,21 @@ try {
   for (let i = 0; i < participants.length; i += chunkSize) {
     const chunk = participants.slice(i, i + chunkSize);
     const mentions = chunk.map(p => p.id._serialized);
-    
-
-    await 
-        chat.sendMessage ($)tagMessageBase\n\n${mentionText} ,
-            mentions,
-                }));
+     
         
 
     await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5s delay between chunks
   }
 
-  logger.info(TagAll command executed by ${contact.number || contact.id.user} in group ${chat.name});
-
+  logger.info ( TagAll command executed by contact.number || {contact.id.user} ),
 } catch (error) {
-  logger.error(❌ Error in tagall command: ${error.message});
+  logger.error(❌ Error in tagall command: {error.message});
   await message.reply('⚠ Error occurred while tagging members. Please try again.');
 }
     
 
     
      
-
-                // Create custom message if provided
-                const customMessage = args.join(' ');
-                let tagMessage = customMessage ? 
-                    
- :📢 *GROUP ANNOUNCEMENT*\n\n🔔 Attention Everyone!
-                    // Add tagged members = [];
-                tagMessage = \n\n Tagged by @{contact.id.user} tagMessage += \n Time : new Date().toLocaleString();
-                tagMessage += \n 🌟 *Powered by Afshuu Bot* 🌟
-                
-                mentions.push(contact.id._serialized);
-
-                await chat.sendMessage(tagMessage, {
-                    mentions: mentions
-                });
-                
-                logger.info(TagAll command executed by {contact.number || contact.id.user} in group {chat.name});
-            } catch (error) {
-                logger.error(Error in tagall command: {error.message});
-                await message.reply('❌ Error occurred while tagging members. Please try again.');
-            }
-        }
-    },
 
     sticker: {
         description: 'Convert images to stickers',
