@@ -664,41 +664,40 @@ Type *.menu* to see all available commands!`);
 };
 
 
+// commands/tagall.js
 
-
-
-
-commands['tagall'] = {
+module.exports = {
     name: 'tagall',
-    description: 'Sabhi group members ko tag karega (auto batch)',
-    async execute(m, conn, args, isAdmin, isBotAdmin) {
-        if (!m.isGroup) 
-            return await conn.sendMessage(m.chat, { text: '❌ Ye command sirf groups me kaam karti hai.' }, { quoted: m });
+    description: 'Group ke sabhi members ko tag karega (auto batch)',
+    async execute(m, sock, args, isAdmin, isBotAdmin) {
+        if (!m.key.remoteJid.endsWith('@g.us')) {
+            return sock.sendMessage(m.key.remoteJid, { text: '❌ Ye command sirf group me kaam karti hai.' }, { quoted: m });
+        }
 
-        if (!isAdmin && !isBotAdmin) 
-            return await conn.sendMessage(m.chat, { text: '❌ Bot ko group admin banao.' }, { quoted: m });
+        const groupMetadata = await sock.groupMetadata(m.key.remoteJid);
+        const participants = groupMetadata.participants;
 
-        let text = args.length > 0 ? args.join(" ") : '📢 Sabhi members tagged hain!';
+        const batchSize = 20; // Ek message me max 20 members tag karenge
+        const messageText = args.join(' ') || '📢 Sabhi members tagged:';
 
-        try {
-            const groupMetadata = await conn.groupMetadata(m.chat);
-            const participants = groupMetadata.participants.map(p => p.id);
+        for (let i = 0; i < participants.length; i += batchSize) {
+            const batch = participants.slice(i, i + batchSize);
+            let text = `${messageText}\n\n`;
+            text += batch.map(p => `@${p.id.split('@')[0]}`).join(' ');
 
-            const limit = 256; // WhatsApp safe limit
-            const batchSize = limit - 10; // Safety margin
+            await sock.sendMessage(
+                m.key.remoteJid,
+                { text: text, mentions: batch.map(p => p.id) },
+                { quoted: m }
+            );
 
-            for (let i = 0; i < participants.length; i += batchSize) {
-                let batch = participants.slice(i, i + batchSize);
-                await conn.sendMessage(m.chat, {
-                    text: `${text}\n\n` + batch.map(u => `@${u.split('@')[0]}`).join(' '),
-                    mentions: batch
-                }, { quoted: m });
-            }
-        } catch (err) {
-            console.error('❌ Tagall Error:', err);
-            await conn.sendMessage(m.chat, { text: '❌ Command execute nahi ho paayi. Logs check karein.' }, { quoted: m });
+            // Thoda delay taaki spam detect na ho
+            await new Promise(res => setTimeout(res, 1000));
         }
     }
 };
+
+
+
 
 module.exports = commands;
