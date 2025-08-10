@@ -663,38 +663,37 @@ Type *.menu* to see all available commands!`);
     }
 };
 
-commands.tagall = {
-    command: 'tagall',
-    description: 'Sab group members ko tag kare, limit ke saath',
-    async execute(msg) {
+// tagall.js
+module.exports = {
+    name: 'tagall',
+    description: 'Sabhi group members ko tag karega (auto batch)',
+    async execute(m, conn, args, isAdmin, isBotAdmin) {
+        if (!m.isGroup) return m.reply('❌ Ye command sirf groups me kaam karti hai.');
+        if (!isAdmin && !isBotAdmin) return m.reply('❌ Bot ko group admin banao.');
+
+        let text = args.length > 0 ? args.join(" ") : '📢 Sabhi members tagged hain!';
+
         try {
-            if (!msg.isGroup) {
-                return msg.reply('❌ Ye command sirf group me chalti hai.');
-            }
+            const groupMetadata = await conn.groupMetadata(m.chat);
+            const participants = groupMetadata.participants.map(p => p.id);
 
-            const chat = await msg.getChat();
-            const participants = chat.participants;
-
-            if (!participants || participants.length === 0) {
-                return msg.reply('❌ Group members ka data nahi mila.');
-            }
-
-            const batchSize = 90; // ek message me maximum tags
+            // WhatsApp safe limit
+            const limit = 256;
+            let batchSize = limit - 10; // safety margin
             for (let i = 0; i < participants.length; i += batchSize) {
-                const batch = participants.slice(i, i + batchSize);
-                const mentions = batch.map(p => p.id._serialized);
-                const text = batch.map(p => `@${p.id.user}`).join(' ');
-                await chat.sendMessage(text, { mentions });
-                await new Promise(r => setTimeout(r, 1500)); // 1.5 sec delay
-            }
+                let batch = participants.slice(i, i + batchSize);
 
-            await msg.reply('✅ Sab members ko tag kar diya gaya!');
-        } catch (e) {
-            console.error(e);
-            msg.reply('❌ TagAll chalane me error aaya.');
+                await conn.sendMessage(m.chat, { 
+                    text: `${text}\n\n` + batch.map(u => `@${u.split('@')[0]}`).join(' '), 
+                    mentions: batch 
+                }, { quoted: m });
+            }
+        } catch (err) {
+            console.error('❌ Tagall Error:', err);
+            m.reply('❌ Command execute nahi ho paayi. Logs check karein.');
         }
     }
-};
+}
 
 
 module.exports = commands;
