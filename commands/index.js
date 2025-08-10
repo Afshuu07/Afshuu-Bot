@@ -698,7 +698,7 @@ Type *.menu* to see all available commands!`);
     },
 
     tagall: {
-        description: 'Tag all members with animated serial number display - Ultimate Group Tagger',
+        description: 'Attention everyone - Tag all members with numbered list display',
         usage: '.tagall [message]',
         ownerOnly: false,
         groupOnly: true,
@@ -717,80 +717,54 @@ Type *.menu* to see all available commands!`);
                     return;
                 }
 
-                const customMessage = args.join(' ') || '🔥 **Everyone has been tagged by serial numbers!**';
+                const customMessage = args.join(' ') || 'ATTENTION EVERYONE - PLEASE READ';
                 const mentions = participants.map(participant => participant.id._serialized);
                 
-                // Send animated loading message first
-                await message.reply('🎬 **INITIATING SERIAL TAG ANIMATION** 🎬\n⏳ Loading all members by serial numbers...\n🎭 Preparing spectacular display...');
+                // Send initial attention alert
+                await message.reply(`🚨 **ATTENTION INCOMING** 🚨\n⏰ **Preparing message for ${participants.length} members...**`);
                 
-                // Wait 3 seconds for dramatic effect
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                // Wait 2 seconds for dramatic effect
+                await new Promise(resolve => setTimeout(resolve, 2000));
                 
-                // Create numbered member list with attractive formatting
-                const membersBySerialNumber = participants.map((participant, index) => {
+                // Create numbered member list
+                const membersList = participants.map((participant, index) => {
                     const contact = participant.contact;
                     const name = contact?.name || contact?.pushname || participant.id.user;
-                    const serialNumber = index + 1;
-                    
-                    // Add special formatting for milestone numbers
-                    if (serialNumber % 50 === 0) return `🔥 ${serialNumber}. ${name} 🔥`;
-                    if (serialNumber % 25 === 0) return `⭐ ${serialNumber}. ${name} ⭐`;
-                    if (serialNumber % 10 === 0) return `✨ ${serialNumber}. ${name} ✨`;
-                    return `${serialNumber}. ${name}`;
-                });
+                    return `${index + 1}. ${name}`;
+                }).join('\n');
+
+                const attentionTagMessage = `🚨━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🚨
+⚡        **ATTENTION EVERYONE**         ⚡
+🔥        **ALL MEMBERS TAGGED**         🔥
+🚨━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🚨
+
+📢 **${customMessage}**
+
+⚠️ **THIS IS AN ATTENTION CALL** ⚠️
+🔔 **ALL MEMBERS PLEASE READ** 🔔
+
+👥 **MEMBERS TAGGED BY LIST:**
+${membersList}
+
+🚨 **TOTAL MEMBERS ALERTED: ${participants.length}**
+⏰ **TIME: ${new Date().toLocaleString()}**
+🔥 **PRIORITY: MAXIMUM**
+⚡ **STATUS: DELIVERED TO ALL**
+
+🚨━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🚨`;
+
+                await message.reply(attentionTagMessage, null, { mentions });
                 
-                // Split members into columns for better display
-                const chunkSize = Math.ceil(participants.length / 3);
-                const column1 = membersBySerialNumber.slice(0, chunkSize);
-                const column2 = membersBySerialNumber.slice(chunkSize, chunkSize * 2);
-                const column3 = membersBySerialNumber.slice(chunkSize * 2);
-                
-                // Create the animated tag message
-                const animatedTagMessage = `🎭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🎭
-🎪    **SERIAL NUMBER TAG ANIMATION**    🎪
-🎨      **SPECTACULAR MEMBER DISPLAY**   🎨  
-🎭━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🎭
-
-🎯 **${customMessage}**
-
-🎪 **ANIMATED SERIAL TAG SEQUENCE:** 🎪
-
-📍 **COLUMN 1 - SERIAL MEMBERS:**
-${column1.join('\n')}
-
-📍 **COLUMN 2 - SERIAL MEMBERS:**
-${column2.join('\n')}
-
-📍 **COLUMN 3 - SERIAL MEMBERS:**
-${column3.join('\n')}
-
-🎊 **ANIMATION COMPLETE!** 🎊
-
-📊 **SPECTACULAR STATISTICS:**
-🎭 Total Tagged by Serial: ${participants.length}
-🎪 Animation Style: Premium
-🎨 Display Mode: Triple Column
-🎯 Serial Number Range: 1-${participants.length}
-⚡ Tag Speed: Lightning Fast
-✨ Visual Effects: Maximum
-🔥 Success Rate: 100%
-
-🎭 **SERIAL TAG ANIMATION FINISHED** 🎭
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎪 Everyone tagged with beautiful serial numbers! 🎪`;
-
-                await message.reply(animatedTagMessage, null, { mentions });
-                
-                // Send confirmation with additional animation
+                // Follow up with confirmation
                 setTimeout(async () => {
-                    await message.reply('🎬✨ **ANIMATION EFFECTS COMPLETE** ✨🎬\n🎪 All members successfully tagged by serial numbers!\n🎭 Visual spectacle delivered with maximum impact!\n🎨 Serial numbering system: ACTIVATED!');
-                }, 2000);
+                    await message.reply('✅ **ATTENTION ALERT DELIVERED**\n🎯 All group members have been tagged by list\n📊 Delivery Status: Complete');
+                }, 3000);
                 
-                logger.info(`Animated serial tagall executed: ${participants.length} members tagged by serial numbers by ${context.contact.number || context.contact.id.user}`);
+                logger.info(`Attention tagall executed: ${participants.length} members tagged by list by ${context.contact.number || context.contact.id.user}`);
                 
             } catch (error) {
-                logger.error(`Animated serial tagall error: ${error.message}`);
-                await message.reply('❌ Animation failed. Retrying with enhanced effects...');
+                logger.error(`Attention tagall error: ${error.message}`);
+                await message.reply('❌ Failed to send attention alert. Please try again.');
             }
         }
     },
