@@ -715,4 +715,33 @@ Type *.menu* to see all available commands!`);
     }
 };
 
+// commands/index.js
+
+module.exports = {
+    name: 'tagall',
+    description: 'Mention all group members in batches',
+    execute: async (sock, m, args) => {
+        const delay = ms => new Promise(res => setTimeout(res, ms));
+        const batchSize = 25; // ek batch me max members
+        const delayMs = 2000; // har batch ke beech delay
+
+        try {
+            const groupMetadata = await sock.groupMetadata(m.chat);
+            const participants = groupMetadata.participants.map(p => p.id);
+
+            for (let i = 0; i < participants.length; i += batchSize) {
+                const batch = participants.slice(i, i + batchSize);
+                const mentions = batch;
+                const text = batch.map(p => `@${p.split('@')[0]}`).join(' ');
+                
+                await sock.sendMessage(m.chat, { text, mentions });
+                await delay(delayMs);
+            }
+        } catch (err) {
+            console.error("Tagall Error:", err);
+            await sock.sendMessage(m.chat, { text: "❌ Error while tagging members." });
+        }
+    }
+};
+
 module.exports = commands;
