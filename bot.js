@@ -217,14 +217,22 @@ Don't forget to check out our interactive tutorial:
             // Clean up any existing Chromium processes
             await this.cleanupChromeProcesses();
 
+            // Add a small delay before initializing
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
             await this.client.initialize();
         } catch (error) {
-            console.error("Failed to start bot:", error);
+            console.error("❌ Failed to start bot:", error.message);
             logger.error("Failed to start bot: " + error.message);
 
             // Attempt cleanup before exit
             await this.cleanupChromeProcesses();
-            process.exit(1);
+            
+            // Exit gracefully instead of hard crash
+            console.log("🔄 Bot will attempt restart in 5 seconds...");
+            setTimeout(() => {
+                process.exit(0);
+            }, 5000);
         }
     }
 

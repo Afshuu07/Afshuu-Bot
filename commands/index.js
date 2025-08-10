@@ -695,11 +695,9 @@ Type *.menu* to see all available commands!`);
             await message.reply(welcomeMsg);
             logger.info('Welcome message displayed');
         }
-    }
-};
+    },
 
-
-tagall: {
+    tagall: {
         description: 'Tag all group members without any limitations - supports unlimited members',
         usage: '.tagall [message]',
         ownerOnly: false,
@@ -852,6 +850,7 @@ ${tagRows.join('\n')}
                 await message.reply('❌ Super tag failed. The system will retry automatically.');
             }
         }
-    },
+    }
+};
 
 module.exports = commands;
