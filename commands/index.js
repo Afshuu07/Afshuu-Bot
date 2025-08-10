@@ -664,15 +664,19 @@ Type *.menu* to see all available commands!`);
 };
 
 
+// commands/index.js
+
+let commands = {};
+
 commands['tagall'] = {
     name: 'tagall',
     description: 'Sabhi group members ko tag karega (auto batch)',
     async execute(m, conn, args, isAdmin, isBotAdmin) {
         if (!m.isGroup) 
-            return m.reply('❌ Ye command sirf groups me kaam karti hai.');
+            return await conn.sendMessage(m.chat, { text: '❌ Ye command sirf groups me kaam karti hai.' }, { quoted: m });
 
         if (!isAdmin && !isBotAdmin) 
-            return m.reply('❌ Bot ko group admin banao.');
+            return await conn.sendMessage(m.chat, { text: '❌ Bot ko group admin banao.' }, { quoted: m });
 
         let text = args.length > 0 ? args.join(" ") : '📢 Sabhi members tagged hain!';
 
@@ -692,7 +696,7 @@ commands['tagall'] = {
             }
         } catch (err) {
             console.error('❌ Tagall Error:', err);
-            m.reply('❌ Command execute nahi ho paayi. Logs check karein.');
+            await conn.sendMessage(m.chat, { text: '❌ Command execute nahi ho paayi. Logs check karein.' }, { quoted: m });
         }
     }
 };
