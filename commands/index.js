@@ -722,7 +722,7 @@ module.exports = {
     description: 'Mention all group members in batches',
     execute: async (sock, m, args) => {
         const delay = ms => new Promise(res => setTimeout(res, ms));
-        const batchSize = 25; // ek batch me max members
+        const batchSize = 90; // ek batch me max members
         const delayMs = 2000; // har batch ke beech delay
 
         try {
