@@ -664,9 +664,9 @@ Type *.menu* to see all available commands!`);
 };
 
 
-// commands/index.js
 
-let commands = {};
+
+
 
 commands['tagall'] = {
     name: 'tagall',
