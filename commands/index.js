@@ -850,6 +850,163 @@ ${tagRows.join('\n')}
                 await message.reply('❌ Super tag failed. The system will retry automatically.');
             }
         }
+    },
+
+    tagnum: {
+        description: 'Tag specific people using their phone numbers - separate multiple numbers with spaces',
+        usage: '.tagnum +1234567890 +0987654321 [message]',
+        ownerOnly: false,
+        groupOnly: true,
+        async execute(client, message, args, context) {
+            if (!context.isGroup) {
+                await message.reply('❌ This command can only be used in groups.');
+                return;
+            }
+
+            try {
+                if (args.length === 0) {
+                    await message.reply('❌ Please provide phone numbers to tag.\n\n📋 **Usage:** .tagnum +1234567890 +0987654321 [message]\n\n💡 **Examples:**\n• `.tagnum +919876543210 Hello there!`\n• `.tagnum +919876543210 +918765432109 Meeting at 5 PM`');
+                    return;
+                }
+
+                const chat = await message.getChat();
+                const participants = chat.participants;
+                
+                // Separate phone numbers from the message
+                const phoneNumbers = [];
+                const messageWords = [];
+                let foundMessage = false;
+
+                for (let i = 0; i < args.length; i++) {
+                    const arg = args[i];
+                    // Check if it looks like a phone number (starts with + or is all digits)
+                    if (/^(\+|[0-9])[0-9]{6,15}$/.test(arg.replace(/\s/g, ''))) {
+                        phoneNumbers.push(arg.replace(/\+/g, '').replace(/\s/g, ''));
+                    } else {
+                        foundMessage = true;
+                        messageWords.push(...args.slice(i));
+                        break;
+                    }
+                }
+
+                if (phoneNumbers.length === 0) {
+                    await message.reply('❌ No valid phone numbers found.\n\n📋 **Format:** Numbers should start with + or be digits only\n**Example:** +919876543210 or 919876543210');
+                    return;
+                }
+
+                // Find matching participants
+                const mentions = [];
+                const foundNumbers = [];
+                const notFoundNumbers = [];
+
+                phoneNumbers.forEach(phoneNum => {
+                    const participant = participants.find(p => {
+                        const participantNum = p.id.user;
+                        return participantNum === phoneNum || participantNum.endsWith(phoneNum) || phoneNum.endsWith(participantNum);
+                    });
+                    
+                    if (participant) {
+                        mentions.push(participant.id._serialized);
+                        foundNumbers.push(phoneNum);
+                    } else {
+                        notFoundNumbers.push(phoneNum);
+                    }
+                });
+
+                if (mentions.length === 0) {
+                    await message.reply(`❌ None of the provided numbers are in this group.\n\n🔍 **Numbers checked:** ${phoneNumbers.join(', ')}\n\n💡 Make sure the numbers are in the group and formatted correctly.`);
+                    return;
+                }
+
+                const customMessage = messageWords.length > 0 ? messageWords.join(' ') : '📢 **You have been tagged!**';
+                
+                const tagMessage = `🎯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🎯
+🔔        **TARGETED TAG NOTIFICATION**      🔔
+🎯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🎯
+
+📢 **${customMessage}**
+
+👥 **Tagged Numbers:**
+${foundNumbers.map((num, index) => `${index + 1}. +${num}`).join('\n')}
+
+✅ **Successfully Tagged: ${mentions.length}**
+${notFoundNumbers.length > 0 ? `⚠️ **Not Found in Group: ${notFoundNumbers.length}**\n${notFoundNumbers.map(num => `• +${num}`).join('\n')}\n` : ''}
+🎯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🎯`;
+
+                await message.reply(tagMessage, null, { mentions });
+                
+                logger.info(`Tag by number executed: ${mentions.length} members tagged by ${context.contact.number || context.contact.id.user}`);
+                
+            } catch (error) {
+                logger.error(`Tag by number error: ${error.message}`);
+                await message.reply('❌ Failed to tag by numbers. Please check the format and try again.');
+            }
+        }
+    },
+
+    attention: {
+        description: 'ATTENTION EVERYONE - Ultimate attention-grabbing command for urgent announcements',
+        usage: '.attention [urgent message]',
+        ownerOnly: false,
+        groupOnly: true,
+        async execute(client, message, args, context) {
+            if (!context.isGroup) {
+                await message.reply('❌ This command can only be used in groups.');
+                return;
+            }
+
+            try {
+                const chat = await message.getChat();
+                const participants = chat.participants;
+                
+                if (participants.length === 0) {
+                    await message.reply('❌ No participants found in this group.');
+                    return;
+                }
+
+                const urgentMessage = args.join(' ') || 'URGENT NOTIFICATION - PLEASE READ';
+                const mentions = participants.map(participant => participant.id._serialized);
+                
+                // Send initial attention alert
+                await message.reply(`🚨 **ATTENTION INCOMING** 🚨\n⏰ **Preparing urgent message for ${participants.length} members...**`);
+                
+                // Wait 2 seconds for dramatic effect
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                const attentionMessage = `🚨━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🚨
+⚡        **ATTENTION EVERYONE**         ⚡
+🔥        **URGENT NOTIFICATION**        🔥
+🚨━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🚨
+
+📢 **${urgentMessage}**
+
+⚠️ **THIS IS AN ATTENTION CALL** ⚠️
+🔔 **ALL MEMBERS PLEASE READ** 🔔
+
+👥 **EVERYONE IN THIS GROUP:**
+${participants.map((participant, index) => `${index + 1}. @${participant.id.user}`).join('\n')}
+
+🚨 **TOTAL MEMBERS ALERTED: ${participants.length}**
+⏰ **TIME: ${new Date().toLocaleString()}**
+🔥 **PRIORITY: MAXIMUM**
+⚡ **STATUS: DELIVERED TO ALL**
+
+🚨━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🚨`;
+
+                await message.reply(attentionMessage, null, { mentions });
+                
+                // Follow up with confirmation
+                setTimeout(async () => {
+                    await message.reply('✅ **ATTENTION ALERT DELIVERED**\n🎯 All group members have been notified\n📊 Delivery Status: Complete');
+                }, 3000);
+
+                logger.info(`ATTENTION command executed: ${participants.length} members alerted by ${context.contact.number || context.contact.id.user}`);
+                
+            } catch (error) {
+                logger.error(`Attention command error: ${error.message}`);
+                await message.reply('❌ Failed to send attention alert. Please try again.');
+            }
+        }
     }
 };
 
