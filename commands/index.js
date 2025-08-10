@@ -852,9 +852,58 @@ ${tagRows.join('\n')}
         }
     },
 
+    list: {
+        description: 'Show numbered list of all group members',
+        usage: '.list',
+        ownerOnly: false,
+        groupOnly: true,
+        async execute(client, message, args, context) {
+            if (!context.isGroup) {
+                await message.reply('❌ This command can only be used in groups.');
+                return;
+            }
+
+            try {
+                const chat = await message.getChat();
+                const participants = chat.participants;
+                
+                if (participants.length === 0) {
+                    await message.reply('❌ No participants found in this group.');
+                    return;
+                }
+
+                // Create numbered list of participants
+                const memberList = participants.map((participant, index) => {
+                    const contact = participant.contact;
+                    const name = contact?.name || contact?.pushname || participant.id.user;
+                    return `${index + 1}. ${name}`;
+                }).join('\n');
+
+                const listMessage = `📋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━📋
+👥        **GROUP MEMBER LIST**         👥
+📋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━📋
+
+${memberList}
+
+📊 **Total Members: ${participants.length}**
+💡 **Use .tagnum 1 2 3 [message] to tag specific numbers**
+
+📋━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━📋`;
+
+                await message.reply(listMessage);
+                
+                logger.info(`Member list displayed: ${participants.length} members by ${context.contact.number || context.contact.id.user}`);
+                
+            } catch (error) {
+                logger.error(`List command error: ${error.message}`);
+                await message.reply('❌ Failed to show member list. Please try again.');
+            }
+        }
+    },
+
     tagnum: {
-        description: 'Tag specific people using their phone numbers - separate multiple numbers with spaces',
-        usage: '.tagnum +1234567890 +0987654321 [message]',
+        description: 'Tag specific people by their position numbers in the group member list',
+        usage: '.tagnum 1 2 5 [message]',
         ownerOnly: false,
         groupOnly: true,
         async execute(client, message, args, context) {
@@ -865,23 +914,26 @@ ${tagRows.join('\n')}
 
             try {
                 if (args.length === 0) {
-                    await message.reply('❌ Please provide phone numbers to tag.\n\n📋 **Usage:** .tagnum +1234567890 +0987654321 [message]\n\n💡 **Examples:**\n• `.tagnum +919876543210 Hello there!`\n• `.tagnum +919876543210 +918765432109 Meeting at 5 PM`');
+                    await message.reply('❌ Please provide member numbers to tag.\n\n📋 **Usage:** .tagnum 1 2 5 [message]\n\n💡 **Examples:**\n• `.tagnum 1 Hello there!`\n• `.tagnum 1 2 5 Meeting at 5 PM`\n• Use `.list` to see numbered member list');
                     return;
                 }
 
                 const chat = await message.getChat();
                 const participants = chat.participants;
                 
-                // Separate phone numbers from the message
-                const phoneNumbers = [];
+                // Separate numbers from the message
+                const memberNumbers = [];
                 const messageWords = [];
                 let foundMessage = false;
 
                 for (let i = 0; i < args.length; i++) {
                     const arg = args[i];
-                    // Check if it looks like a phone number (starts with + or is all digits)
-                    if (/^(\+|[0-9])[0-9]{6,15}$/.test(arg.replace(/\s/g, ''))) {
-                        phoneNumbers.push(arg.replace(/\+/g, '').replace(/\s/g, ''));
+                    // Check if it's a number
+                    if (/^\d+$/.test(arg)) {
+                        const num = parseInt(arg);
+                        if (num >= 1 && num <= participants.length) {
+                            memberNumbers.push(num);
+                        }
                     } else {
                         foundMessage = true;
                         messageWords.push(...args.slice(i));
@@ -889,57 +941,48 @@ ${tagRows.join('\n')}
                     }
                 }
 
-                if (phoneNumbers.length === 0) {
-                    await message.reply('❌ No valid phone numbers found.\n\n📋 **Format:** Numbers should start with + or be digits only\n**Example:** +919876543210 or 919876543210');
+                if (memberNumbers.length === 0) {
+                    await message.reply(`❌ No valid member numbers found.\n\n📋 **Valid range:** 1 to ${participants.length}\n💡 Use \`.list\` to see the numbered member list`);
                     return;
                 }
 
-                // Find matching participants
+                // Get participants to tag and their details
                 const mentions = [];
-                const foundNumbers = [];
-                const notFoundNumbers = [];
+                const taggedMembers = [];
 
-                phoneNumbers.forEach(phoneNum => {
-                    const participant = participants.find(p => {
-                        const participantNum = p.id.user;
-                        return participantNum === phoneNum || participantNum.endsWith(phoneNum) || phoneNum.endsWith(participantNum);
-                    });
-                    
+                memberNumbers.forEach(num => {
+                    const participant = participants[num - 1]; // Convert to 0-based index
                     if (participant) {
                         mentions.push(participant.id._serialized);
-                        foundNumbers.push(phoneNum);
-                    } else {
-                        notFoundNumbers.push(phoneNum);
+                        const contact = participant.contact;
+                        const name = contact?.name || contact?.pushname || participant.id.user;
+                        taggedMembers.push(`${num}. ${name}`);
                     }
                 });
-
-                if (mentions.length === 0) {
-                    await message.reply(`❌ None of the provided numbers are in this group.\n\n🔍 **Numbers checked:** ${phoneNumbers.join(', ')}\n\n💡 Make sure the numbers are in the group and formatted correctly.`);
-                    return;
-                }
 
                 const customMessage = messageWords.length > 0 ? messageWords.join(' ') : '📢 **You have been tagged!**';
                 
                 const tagMessage = `🎯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🎯
-🔔        **TARGETED TAG NOTIFICATION**      🔔
+🔔    **NUMBERED TAG NOTIFICATION**     🔔
 🎯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🎯
 
 📢 **${customMessage}**
 
-👥 **Tagged Numbers:**
-${foundNumbers.map((num, index) => `${index + 1}. +${num}`).join('\n')}
+👥 **Tagged Members:**
+${taggedMembers.join('\n')}
 
-✅ **Successfully Tagged: ${mentions.length}**
-${notFoundNumbers.length > 0 ? `⚠️ **Not Found in Group: ${notFoundNumbers.length}**\n${notFoundNumbers.map(num => `• +${num}`).join('\n')}\n` : ''}
+✅ **Successfully Tagged: ${mentions.length} members**
+💡 **Use .list to see all numbered members**
+
 🎯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🎯`;
 
                 await message.reply(tagMessage, null, { mentions });
                 
-                logger.info(`Tag by number executed: ${mentions.length} members tagged by ${context.contact.number || context.contact.id.user}`);
+                logger.info(`Tag by member number executed: ${mentions.length} members tagged (numbers: ${memberNumbers.join(', ')}) by ${context.contact.number || context.contact.id.user}`);
                 
             } catch (error) {
-                logger.error(`Tag by number error: ${error.message}`);
-                await message.reply('❌ Failed to tag by numbers. Please check the format and try again.');
+                logger.error(`Tag by member number error: ${error.message}`);
+                await message.reply('❌ Failed to tag by member numbers. Please check the numbers and try again.');
             }
         }
     },
