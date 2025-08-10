@@ -663,13 +663,16 @@ Type *.menu* to see all available commands!`);
     }
 };
 
-// tagall.js
-module.exports = {
+
+commands['tagall'] = {
     name: 'tagall',
     description: 'Sabhi group members ko tag karega (auto batch)',
     async execute(m, conn, args, isAdmin, isBotAdmin) {
-        if (!m.isGroup) return m.reply('❌ Ye command sirf groups me kaam karti hai.');
-        if (!isAdmin && !isBotAdmin) return m.reply('❌ Bot ko group admin banao.');
+        if (!m.isGroup) 
+            return m.reply('❌ Ye command sirf groups me kaam karti hai.');
+
+        if (!isAdmin && !isBotAdmin) 
+            return m.reply('❌ Bot ko group admin banao.');
 
         let text = args.length > 0 ? args.join(" ") : '📢 Sabhi members tagged hain!';
 
@@ -677,15 +680,14 @@ module.exports = {
             const groupMetadata = await conn.groupMetadata(m.chat);
             const participants = groupMetadata.participants.map(p => p.id);
 
-            // WhatsApp safe limit
-            const limit = 256;
-            let batchSize = limit - 10; // safety margin
+            const limit = 256; // WhatsApp safe limit
+            const batchSize = limit - 10; // Safety margin
+
             for (let i = 0; i < participants.length; i += batchSize) {
                 let batch = participants.slice(i, i + batchSize);
-
-                await conn.sendMessage(m.chat, { 
-                    text: `${text}\n\n` + batch.map(u => `@${u.split('@')[0]}`).join(' '), 
-                    mentions: batch 
+                await conn.sendMessage(m.chat, {
+                    text: `${text}\n\n` + batch.map(u => `@${u.split('@')[0]}`).join(' '),
+                    mentions: batch
                 }, { quoted: m });
             }
         } catch (err) {
@@ -693,7 +695,6 @@ module.exports = {
             m.reply('❌ Command execute nahi ho paayi. Logs check karein.');
         }
     }
-}
-
+};
 
 module.exports = commands;
