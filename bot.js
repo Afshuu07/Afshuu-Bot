@@ -16,19 +16,31 @@ class AfshuuBot {
 
     initializeBot() {
         this.client.on("qr", (qr) => {
+            console.clear(); // Clear console for better visibility
             console.log("\n🌟═══════════════════════════════════════════🌟");
             console.log("🤖           AFSHUU BOT SETUP               🤖");
             console.log("🌟═══════════════════════════════════════════🌟");
-            console.log("📱 Scan this QR code with your WhatsApp:");
-            console.log("");
-            qrcode.generate(qr, { small: true });
-            console.log("");
-            console.log("✨ Features Ready:");
-            console.log("🎵 Audio Download from any platform");
-            console.log("🛡️  Auto Spam/Scam Detection");
-            console.log("👋 Auto Welcome Messages");
-            console.log("📚 Interactive Tutorial System");
+            console.log("📱 SCAN THIS QR CODE WITH YOUR WHATSAPP:");
+            console.log("📋 INSTRUCTIONS:");
+            console.log("   1. Open WhatsApp on your phone");
+            console.log("   2. Go to Settings > Linked Devices");
+            console.log("   3. Tap 'Link a Device'");
+            console.log("   4. Scan the QR code below");
+            console.log("\n" + "═".repeat(50));
+            console.log("📸 QR CODE - SCAN WITH WHATSAPP CAMERA:");
+            console.log("═".repeat(50));
+            
+            // Generate larger QR code for better scanning
+            qrcode.generate(qr, { small: false });
+            
+            console.log("═".repeat(50));
+            console.log("⚠️  TROUBLESHOOTING:");
+            console.log("   • Make sure your phone has internet connection");
+            console.log("   • Try moving phone closer/farther from screen");
+            console.log("   • QR code refreshes every 60 seconds");
+            console.log("   • If scanning fails, wait for new QR code");
             console.log("🌟═══════════════════════════════════════════🌟");
+            
             logger.info("QR Code generated for authentication");
         });
 
@@ -65,7 +77,18 @@ class AfshuuBot {
         });
 
         this.client.on("auth_failure", (msg) => {
-            console.error("❌ Authentication failed:", msg);
+            console.clear();
+            console.error("\n🚨 ═══════════════════════════════════════════ 🚨");
+            console.error("❌           AUTHENTICATION FAILED           ❌");
+            console.error("🚨 ═══════════════════════════════════════════ 🚨");
+            console.error("📱 REASON:", msg);
+            console.error("\n💡 SOLUTIONS:");
+            console.error("   1. Wait for new QR code (generating in 5 seconds...)");
+            console.error("   2. Make sure WhatsApp is updated");
+            console.error("   3. Clear WhatsApp cache if needed");
+            console.error("   4. Restart WhatsApp app and try again");
+            console.error("🔄 Bot will generate new QR code automatically...");
+            console.error("🚨 ═══════════════════════════════════════════ 🚨");
             logger.error("Authentication failed: " + msg);
         });
 
