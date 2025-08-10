@@ -1,4 +1,4 @@
-modules = ["nodejs-20"]
+modules = ["web", "nodejs-20", "python-3.11"]
 
 [nix]
 channel = "stable-25_05"
@@ -34,3 +34,6 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm install whatsapp-web.js qrcode-terminal && node bot.js"
+
+[agent]
+expertMode = true
