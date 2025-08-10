@@ -30,8 +30,13 @@ class AfshuuBot {
             console.log("📸 QR CODE - SCAN WITH WHATSAPP CAMERA:");
             console.log("═".repeat(50));
             
-            // Generate larger QR code for better scanning
-            qrcode.generate(qr, { small: false });
+            // Generate QR code with Unicode blocks for better display
+            try {
+                qrcode.generate(qr, { small: true });
+            } catch (error) {
+                console.log("QR Code Data:", qr);
+                console.log("Please use a QR code scanner app to scan this data directly");
+            }
             
             console.log("═".repeat(50));
             console.log("⚠️  TROUBLESHOOTING:");
