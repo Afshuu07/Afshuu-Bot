@@ -513,58 +513,6 @@ Platform: WhatsApp Web 📱
         }
     },
 
-    tagall: {
-        description: 'Tag all members in the group with enhanced formatting',
-        usage: '.tagall [message]',
-        ownerOnly: false,
-        groupOnly: true,
-        async execute(client, message, args, context) {
-            const { chat, contact } = context;
-            
-            if (!chat.isGroup) {
-                await message.reply('❌ This command can only be used in groups!');
-                return;
-            }
-
-            try {
-                const participants = chat.participants;
-                if (participants.length > 100) {
-                    await message.reply('⚠️ Group too large! Maximum 100 members can be tagged at once.');
-                    return;
-                }
-
-                // Create custom message if provided
-                const customMessage = args.join(' ');
-                let tagMessage = customMessage ? 
-                    `📢 *${customMessage}* 📢\n\n🎯 *Attention Everyone!* 🎯\n\n` : 
-                    `📢 *GROUP ANNOUNCEMENT* 📢\n\n🎯 *Everyone, please pay attention!* 🎯\n\n`;
-                
-                // Add tagged members
-                const mentions = [];
-                participants.forEach(participant => {
-                    if (participant.id._serialized !== contact.id._serialized) {
-                        tagMessage += `👤 @${participant.id.user} `;
-                        mentions.push(participant.id._serialized);
-                    }
-                });
-
-                tagMessage += `\n\n🤖 *Tagged by:* @${contact.id.user}`;
-                tagMessage += `\n⏰ *Time:* ${new Date().toLocaleString()}`;
-                tagMessage += `\n🌟 *Powered by Afshuu Bot* 🌟`;
-                
-                mentions.push(contact.id._serialized);
-
-                await chat.sendMessage(tagMessage, {
-                    mentions: mentions
-                });
-                
-                logger.info(`TagAll command executed by ${contact.number || contact.id.user} in group ${chat.name}`);
-            } catch (error) {
-                logger.error(`Error in tagall command: ${error.message}`);
-                await message.reply('❌ Error occurred while tagging members. Please try again.');
-            }
-        }
-    },
 
     sticker: {
         description: 'Convert images to stickers',
@@ -715,33 +663,38 @@ Type *.menu* to see all available commands!`);
     }
 };
 
-// commands/index.js
-
-module.exports = {
-    name: 'tagall',
-    description: 'Mention all group members in batches',
-    execute: async (sock, m, args) => {
-        const delay = ms => new Promise(res => setTimeout(res, ms));
-        const batchSize = 90; // ek batch me max members
-        const delayMs = 2000; // har batch ke beech delay
-
+commands.tagall = {
+    command: 'tagall',
+    description: 'Sab group members ko tag kare, limit ke saath',
+    async execute(msg) {
         try {
-            const groupMetadata = await sock.groupMetadata(m.chat);
-            const participants = groupMetadata.participants.map(p => p.id);
+            if (!msg.isGroup) {
+                return msg.reply('❌ Ye command sirf group me chalti hai.');
+            }
 
+            const chat = await msg.getChat();
+            const participants = chat.participants;
+
+            if (!participants || participants.length === 0) {
+                return msg.reply('❌ Group members ka data nahi mila.');
+            }
+
+            const batchSize = 90; // ek message me maximum tags
             for (let i = 0; i < participants.length; i += batchSize) {
                 const batch = participants.slice(i, i + batchSize);
-                const mentions = batch;
-                const text = batch.map(p => `@${p.split('@')[0]}`).join(' ');
-                
-                await sock.sendMessage(m.chat, { text, mentions });
-                await delay(delayMs);
+                const mentions = batch.map(p => p.id._serialized);
+                const text = batch.map(p => `@${p.id.user}`).join(' ');
+                await chat.sendMessage(text, { mentions });
+                await new Promise(r => setTimeout(r, 1500)); // 1.5 sec delay
             }
-        } catch (err) {
-            console.error("Tagall Error:", err);
-            await sock.sendMessage(m.chat, { text: "❌ Error while tagging members." });
+
+            await msg.reply('✅ Sab members ko tag kar diya gaya!');
+        } catch (e) {
+            console.error(e);
+            msg.reply('❌ TagAll chalane me error aaya.');
         }
     }
 };
+
 
 module.exports = commands;
