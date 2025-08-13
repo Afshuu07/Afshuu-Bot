@@ -4,9 +4,10 @@ const config = require('../config/settings');
 const videoDownloader = require('../utils/videoDownloader');
 
 // Require modules for media handling
-const { MessageMedia } = require('whatsapp-web.js');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
+const { exec } = require('child_process');
 
 const commands = {
     alive: {
@@ -395,22 +396,33 @@ Status: Always Learning & Improving 🚀
                     }
 
                     // Check if file exists and send it
-                    const fs = require('fs');
                     const possibleFiles = [`${fileName}.mp3`, `${fileName}.m4a`, `${fileName}.webm`];
                     
                     for (const file of possibleFiles) {
                         if (fs.existsSync(file)) {
                             try {
-                                const media = MessageMedia.fromFilePath(file);
-                                await message.reply(media, null, {
-                                    caption: `🎵 *Download Complete!* 🎵
-                                    
+                                // For Bailey bot, use sendMessage with document
+                                if (typeof client.sendMessage === 'function') {
+                                    const fileBuffer = fs.readFileSync(file);
+                                    await client.sendMessage(message.key.remoteJid, {
+                                        audio: fileBuffer,
+                                        caption: `🎵 *Download Complete!* 🎵
+                                        
 ✅ Successfully downloaded audio
 🎧 Quality: High (MP3)
 📱 Ready to enjoy!
 
-🌟 *Powered by Afshuu Bot*`
-                                });
+🌟 *Powered by Afshuu Bailey Bot*`,
+                                        mimetype: 'audio/mp3'
+                                    });
+                                } else {
+                                    // For whatsapp-web.js compatibility (if still needed)
+                                    const { MessageMedia } = require('whatsapp-web.js');
+                                    const media = MessageMedia.fromFilePath(file);
+                                    await message.reply(media, null, {
+                                        caption: `🎵 *Download Complete!* 🎵`
+                                    });
+                                }
                                 
                                 // Clean up file
                                 fs.unlinkSync(file);
@@ -953,12 +965,30 @@ This may take a few minutes for large videos.`);
                 mentions.push(`${participant.id.user}@c.us`);
             }
 
-            await chat.sendMessage(text, { mentions });
-            
-            try {
-                await message.delete(true);
-            } catch (error) {
-                logger.warn('Could not delete original hidetag message');
+            // For Bailey, we need to handle this differently
+            if (typeof client.sendMessage === 'function') {
+                // Bailey bot
+                await client.sendMessage(message.key.remoteJid, {
+                    text: text,
+                    mentions: mentions
+                });
+                
+                try {
+                    await client.sendMessage(message.key.remoteJid, {
+                        delete: message.key
+                    });
+                } catch (error) {
+                    logger.warn('Could not delete original hidetag message');
+                }
+            } else {
+                // whatsapp-web.js bot
+                await chat.sendMessage(text, { mentions });
+                
+                try {
+                    await message.delete(true);
+                } catch (error) {
+                    logger.warn('Could not delete original hidetag message');
+                }
             }
             
             logger.info(`Hidden tag sent to ${mentions.length} members`);

@@ -10,6 +10,16 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**August 13, 2025 - Migration to Bailey WhatsApp Library**
+- Successfully migrated from whatsapp-web.js to @whiskeysockets/baileys for better performance
+- Updated all dependencies to be compatible with Bailey (jimp@0.16.13, sharp@0.32.6)
+- Created Bailey-specific message handler with compatibility layer
+- Enhanced bot startup with Bailey's multi-device authentication system
+- Improved QR code display and connection handling for Bailey
+- Updated commands system to work with both Bailey and whatsapp-web.js architectures
+- Maintained all existing features: game recommendations, video downloads, spam detection
+- Bailey provides better stability, faster connections, and multi-device support
+
 **August 13, 2025 - Enhanced UI and Game Recommendations Update**
 - Made hidetag command simple with NO animations as requested
 - Enhanced all other bot features with attractive animations and improved visual design
@@ -68,17 +78,23 @@ Preferred communication style: Simple, everyday language.
 ## System Architecture
 
 ### Core Architecture
-The application follows a modular, event-driven architecture centered around the WhatsApp Web client:
+The application follows a modular, event-driven architecture centered around the Bailey WhatsApp client:
 
-- **Bot Core** (`bot.js`): Main application entry point that initializes the WhatsApp client with enhanced Puppeteer configuration, handles authentication flow, and manages auto-welcome systems
-- **Message Handler** (`handlers/messageHandler.js`): Central message processing unit that routes incoming messages to appropriate command handlers with spam detection integration
-- **Enhanced Command System** (`commands/index.js`): Comprehensive modular command structure featuring categorized menus, interactive tutorials, audio downloads, and security features
+- **Bailey Bot Core** (`bot-bailey.js`): Main application entry point using @whiskeysockets/baileys library with multi-device authentication, enhanced connection handling, and auto-welcome systems
+- **Bailey Message Handler** (`handlers/baileyMessageHandler.js`): Bailey-specific message processing with compatibility layer for existing commands
+- **Legacy Message Handler** (`handlers/messageHandler.js`): Maintains compatibility with whatsapp-web.js style commands and provides fallback support
+- **Enhanced Command System** (`commands/index.js`): Comprehensive modular command structure featuring categorized menus, interactive tutorials, audio/video downloads, game recommendations, and security features
 - **Configuration Management** (`config/settings.js`): Centralized configuration system supporting environment variables for deployment flexibility
 - **Advanced Spam Detection** (`utils/spamDetector.js`): Real-time message analysis system with pattern recognition, threat assessment, and automatic response capabilities
-- **Media Processing** (`utils/mediaDownloader.js`): Handles audio downloads from multiple platforms using yt-dlp integration
+- **Media Processing** (`utils/mediaDownloader.js`, `utils/videoDownloader.js`): Handles audio/video downloads from multiple platforms using yt-dlp integration
 
 ### Authentication Strategy
-Uses NoAuth strategy from whatsapp-web.js to prevent profile conflicts and browser lock issues. Requires QR code scanning each session but ensures reliable startup and eliminates profile-related errors in containerized environments.
+Uses Bailey's multi-file authentication state system which provides:
+- Multi-device support (can be connected to multiple devices simultaneously)
+- Persistent sessions without browser dependencies
+- Better security with end-to-end encryption
+- More stable connections with automatic reconnection
+- No browser profile conflicts or Puppeteer dependencies
 
 ### Logging System
 Custom logging implementation with:

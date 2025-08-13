@@ -15,27 +15,18 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "WhatsApp Bot"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "whatsapp-bot-test"
+args = "Bailey Bot"
 
 [[workflows.workflow]]
-name = "WhatsApp Bot"
+name = "Bailey Bot"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm install whatsapp-web.js qrcode-terminal puppeteer && node bot.js"
+args = "node bot-bailey.js"
 
-[[workflows.workflow]]
-name = "whatsapp-bot-test"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npm install whatsapp-web.js qrcode-terminal && node bot.js"
+[workflows.workflow.metadata]
+outputType = "console"
 
 [agent]
 expertMode = true

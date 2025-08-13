@@ -2,6 +2,7 @@ const commands = require('../commands');
 const logger = require('../utils/logger');
 const config = require('../config/settings');
 const spamDetector = require('../utils/spamDetector');
+const BaileyMessageHandler = require('./baileyMessageHandler');
 
 class MessageHandler {
     constructor() {
@@ -11,7 +12,12 @@ class MessageHandler {
 
     async handleMessage(client, message) {
         try {
-            // Get contact info for spam detection
+            // Check if this is a Bailey bot call
+            if (typeof client.sendMessage === 'function' && message.key) {
+                return await BaileyMessageHandler.handleMessage(client, message);
+            }
+            
+            // Get contact info for spam detection (whatsapp-web.js)
             const contact = await message.getContact();
             
             // Analyze message for spam/suspicious content
