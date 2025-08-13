@@ -3,7 +3,7 @@ run = "node index.js"
 
 [nix]
 channel = "stable-25_05"
-packages = ["chromium", "glib", "gtk3", "yt-dlp", "python3", "ffmpeg"]
+packages = ["chromium", "ffmpeg", "glib", "gtk3", "python3", "yt-dlp"]
 
 [workflows]
 runButton = "Project"
