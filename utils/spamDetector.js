@@ -31,9 +31,89 @@ class SpamDetector {
         ];
 
         this.spamKeywords = [
+            // English
             'scam', 'fraud', 'fake', 'spam', 'phishing', 'malware', 'virus',
             'hack', 'stolen', 'illegal', 'counterfeit', 'pyramid', 'ponzi',
-            'mlm', 'multi-level', 'chain letter', 'advance fee', 'nigerian prince'
+            'mlm', 'multi-level', 'chain letter', 'advance fee', 'nigerian prince',
+            
+            // Hindi
+            'धोखाधड़ी', 'जालसाजी', 'नकली', 'स्पैम', 'फिशिंग', 'मैलवेयर', 'वायरस',
+            'हैक', 'चोरी', 'गैरकानूनी', 'जाली', 'पिरामिड', 'पोंजी', 'बहु-स्तरीय',
+            
+            // Spanish
+            'estafa', 'fraude', 'falso', 'spam', 'phishing', 'malware', 'virus',
+            'hackear', 'robado', 'ilegal', 'falsificado', 'pirámide', 'ponzi',
+            
+            // French
+            'arnaque', 'fraude', 'faux', 'spam', 'hameçonnage', 'malware', 'virus',
+            'pirater', 'volé', 'illégal', 'contrefait', 'pyramide', 'ponzi',
+            
+            // Arabic
+            'احتيال', 'خداع', 'مزيف', 'سبام', 'تصيد', 'برمجيات خبيثة', 'فيروس',
+            'اختراق', 'مسروق', 'غير قانوني', 'مزور', 'هرمي', 'بونزي',
+            
+            // Portuguese
+            'golpe', 'fraude', 'falso', 'spam', 'phishing', 'malware', 'vírus',
+            'hackear', 'roubado', 'ilegal', 'falsificado', 'pirâmide', 'ponzi',
+            
+            // German
+            'betrug', 'schwindel', 'falsch', 'spam', 'phishing', 'malware', 'virus',
+            'hacken', 'gestohlen', 'illegal', 'gefälscht', 'pyramide', 'ponzi',
+            
+            // Russian
+            'мошенничество', 'обман', 'поддельный', 'спам', 'фишинг', 'вредонос', 'вирус',
+            'взлом', 'украденный', 'незаконный', 'поддельный', 'пирамида', 'понци',
+            
+            // Chinese
+            '诈骗', '欺诈', '假冒', '垃圾邮件', '钓鱼', '恶意软件', '病毒',
+            '黑客', '被盗', '非法', '假冒', '金字塔', '庞氏',
+            
+            // Japanese
+            '詐欺', '詐取', '偽物', 'スパム', 'フィッシング', 'マルウェア', 'ウイルス',
+            'ハッキング', '盗難', '違法', '偽造', 'ピラミッド', 'ポンジ'
+        ];
+
+        // Multi-language abuse/sexual abuse patterns
+        this.abusePatterns = [
+            // English
+            /\b(sexual|abuse|harass|rape|assault|molest|inappropriate|unwanted)\b/gi,
+            /\b(nude|naked|explicit|porn|sexual|xxx|adult|nsfw)\b/gi,
+            
+            // Hindi
+            /\b(यौन|दुर्व्यवहार|परेशान|बलात्कार|हमला|अनुचित|अवांछित)\b/gi,
+            /\b(नग्न|अश्लील|वयस्क|गंदा|गलत)\b/gi,
+            
+            // Spanish  
+            /\b(sexual|abuso|acoso|violación|agresión|inapropiado|no deseado)\b/gi,
+            /\b(desnudo|explícito|pornografía|adulto|xxx)\b/gi,
+            
+            // French
+            /\b(sexuel|abus|harcèlement|viol|agression|inapproprié|non désiré)\b/gi,
+            /\b(nu|explicite|pornographie|adulte|xxx)\b/gi,
+            
+            // Arabic
+            /\b(جنسي|إساءة|مضايقة|اغتصاب|اعتداء|غير مناسب|غير مرغوب)\b/gi,
+            /\b(عاري|صريح|إباحي|للبالغين|xxx)\b/gi,
+            
+            // Portuguese
+            /\b(sexual|abuso|assédio|estupro|agressão|inadequado|indesejado)\b/gi,
+            /\b(nu|explícito|pornografia|adulto|xxx)\b/gi,
+            
+            // German
+            /\b(sexuell|missbrauch|belästigung|vergewaltigung|angriff|unangemessen)\b/gi,
+            /\b(nackt|explizit|pornografie|erwachsene|xxx)\b/gi,
+            
+            // Russian
+            /\b(сексуальный|злоупотребление|домогательство|изнасилование|нападение)\b/gi,
+            /\b(голый|откровенный|порнография|взрослый|xxx)\b/gi,
+            
+            // Chinese
+            /\b(性|滥用|骚扰|强奸|攻击|不当|不受欢迎)\b/gi,
+            /\b(裸体|明确|色情|成人|xxx)\b/gi,
+            
+            // Japanese
+            /\b(性的|虐待|嫌がらせ|レイプ|攻撃|不適切|望ましくない)\b/gi,
+            /\b(裸|明示的|ポルノ|大人|xxx)\b/gi
         ];
 
         this.suspiciousUrls = [
@@ -141,6 +221,27 @@ class SpamDetector {
             analysis.isSuspicious = true;
             analysis.reasons.push('Excessive special characters');
             analysis.confidence += 15;
+        }
+
+        // Check for abuse/sexual content
+        let abuseMatches = 0;
+        this.abusePatterns.forEach(pattern => {
+            if (pattern.test(message)) {
+                abuseMatches++;
+                analysis.reasons.push('Inappropriate/abusive content detected');
+            }
+        });
+
+        if (abuseMatches > 0) {
+            analysis.isSuspicious = true;
+            analysis.confidence += abuseMatches * 30;
+            
+            if (abuseMatches >= 2) {
+                analysis.isSpam = true;
+                analysis.severity = 'high';
+            } else {
+                analysis.severity = 'medium';
+            }
         }
 
         // Check for repetitive characters

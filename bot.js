@@ -58,8 +58,9 @@ class AfshuuBot {
 
 🚀 Status: Fully Operational
 🎵 Audio Downloads: Ready
-🛡️  Spam Detection: Active
-👋 Auto Welcome: Enabled
+📹 Video Downloads: Ready (No Watermarks)
+🛡️  Multi-language Spam Detection: Active
+👋 Auto Welcome with Profile Pictures: Enabled
 📚 Tutorial System: Available
 
 🔥 Ready to serve with enhanced features!
@@ -67,7 +68,7 @@ class AfshuuBot {
 
             console.log(readyMessage);
             logger.info(
-                "Afshuu Bot initialized successfully with enhanced features",
+                "Afshuu Bot initialized successfully with enhanced features including video downloads, multi-language abuse detection, and profile picture welcomes",
             );
 
             // Send startup notification to owner if configured
@@ -131,53 +132,64 @@ class AfshuuBot {
                     notification.id.participant,
                 );
 
+                // Try to get profile picture
+                let profilePicture = null;
+                try {
+                    const profilePicUrl = await contact.getProfilePicUrl();
+                    if (profilePicUrl) {
+                        const { MessageMedia } = require('whatsapp-web.js');
+                        profilePicture = await MessageMedia.fromUrl(profilePicUrl);
+                    }
+                } catch (error) {
+                    logger.warn(`Could not get profile picture for ${contact.id.user}: ${error.message}`);
+                }
+
                 const welcomeMessages = [
-                    `🎊✨ *WELCOME TO ${chat.name}!* ✨🎊
+                    `🎊 *Welcome to ${chat.name}!* 🎊
 
-🌟 Hey there @${contact.id.user}! 🌟
-🎉 We're thrilled to have you join our amazing community!
+👋 Hey @${contact.id.user}! Great to have you here!
 
-🚀 *What can I do for you?*
-🎵 Download audio from YouTube, Spotify & more
-📚 Interactive tutorial: Type *.tutorial*
-🛡️  Advanced spam protection
-📱 Smart group management
-🎮 Fun commands & utilities
+🚀 *What I can help with:*
+🎵 Download audio & videos from any platform
+📹 Watermark-free video downloads
+🛡️ Advanced multi-language spam protection  
+📚 Interactive tutorials: *.tutorial*
+🎮 Game recommendations: *.games*
+👥 Simple group management tools
 
-💫 *Quick Start:*
+💡 *Quick Start:*
 • *.menu* - See all commands
-• *.tutorial* - Interactive guide
+• *.video [link]* - Download videos
 • *.help* - Get assistance
 
-🔥 Let's make this group awesome together!
-🤖 *Powered by Afshuu Bot*`,
+Welcome aboard! 🌟`,
 
-                    `🌈 *Welcome Aboard* @${contact.id.user}! 🌈
+                    `🌟 *Welcome @${contact.id.user}!* 🌟
 
-🎭 You've just entered the coolest group: *${chat.name}*
+🎭 You've joined an awesome group: *${chat.name}*
 
-✨ *Your journey begins now:*
-🎯 Explore commands with *.menu*
-🎓 New here? Try *.tutorial* for a guided tour!
-🎵 Love music? I can download audio from any platform!
-🛡️  Don't worry about spam - I've got your back!
+✨ *Ready to explore?*
+🎯 Try *.menu* for all commands
+🎓 New here? Use *.tutorial* for guidance!
+🎵 Love media? I download from 1000+ platforms!
+🛡️ Stay protected with smart spam detection!
 
-🌟 Ready to experience the magic? Let's go! 🚀`,
+Let's make this group amazing! 🚀`,
 
-                    `🎪 *GRAND ENTRANCE!* 🎪
+                    `🎪 *New Member Alert!* 🎪
 Welcome @${contact.id.user} to *${chat.name}*!
 
-🎨 You've unlocked a world of possibilities:
-🎧 Audio downloads from everywhere
-🎯 Smart bot interactions  
-🎪 Fun group activities
-🛡️  Ultimate protection system
+🎨 *Available features:*
+📹 Video downloads (watermark-free)
+🎧 Audio from any platform
+🎯 Smart group interactions  
+🛡️ Advanced protection system
 
-🎁 *Special for newcomers:*
-Type *.tutorial* for your personal guide!
-Type *.welcome* to see this message again!
+🎁 *Get started:*
+• *.tutorial* - Personal guide
+• *.welcome* - See this again
 
-🌟 Let the adventure begin! 🌟`,
+Welcome to the community! 🌟`,
                 ];
 
                 const randomWelcome =
@@ -185,20 +197,26 @@ Type *.welcome* to see this message again!
                         Math.floor(Math.random() * welcomeMessages.length)
                     ];
 
-                await chat.sendMessage(randomWelcome, {
-                    mentions: [contact.id._serialized],
-                });
+                // Send profile picture with welcome message if available
+                if (profilePicture) {
+                    await chat.sendMessage(profilePicture, null, {
+                        caption: randomWelcome,
+                        mentions: [contact.id._serialized],
+                    });
+                } else {
+                    await chat.sendMessage(randomWelcome, {
+                        mentions: [contact.id._serialized],
+                    });
+                }
 
-                // Send tutorial hint after 5 seconds
+                // Send tutorial hint after 8 seconds
                 setTimeout(async () => {
                     try {
                         await chat.sendMessage(
-                            `💡 *Psst, @${contact.id.user}!* 
+                            `💡 *Hey @${contact.id.user}!* 
                         
-Don't forget to check out our interactive tutorial:
-📚 Type *.tutorial* to get started!
-
-🎯 Or jump right in with *.menu* to see all commands!`,
+Quick tip: Try *.tutorial* for a guided tour of all features!
+Or use *.menu* to see everything I can do! 🎯`,
                             {
                                 mentions: [contact.id._serialized],
                             },
@@ -208,10 +226,10 @@ Don't forget to check out our interactive tutorial:
                             `Error sending tutorial hint: ${error.message}`,
                         );
                     }
-                }, 5000);
+                }, 8000);
 
                 logger.info(
-                    `Enhanced welcome message sent to ${contact.number || contact.id.user} in group ${chat.name}`,
+                    `Enhanced welcome with ${profilePicture ? 'profile picture' : 'text'} sent to ${contact.number || contact.id.user} in group ${chat.name}`,
                 );
             } catch (error) {
                 logger.error(`Error sending welcome message: ${error.message}`);
