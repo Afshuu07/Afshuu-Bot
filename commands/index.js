@@ -2,6 +2,7 @@ const logger = require('../utils/logger');
 const spamDetector = require('../utils/spamDetector');
 const config = require('../config/settings');
 const videoDownloader = require('../utils/videoDownloader');
+const connectionStatusVisualizer = require('../utils/connectionStatusVisualizer');
 
 // Require modules for media handling
 const fs = require('fs');
@@ -52,6 +53,91 @@ const commands = {
 
             await message.reply(aliveMessage);
             logger.info('Enhanced alive command executed successfully');
+        }
+    },
+
+    status: {
+        description: 'Show real-time connection status and health information',
+        usage: '.status [health|full]',
+        ownerOnly: false,
+        groupOnly: false,
+        async execute(client, message, args, context) {
+            const option = args[0]?.toLowerCase();
+            
+            try {
+                if (option === 'health') {
+                    // Show connection health assessment
+                    const health = connectionStatusVisualizer.displayConnectionHealth();
+                    
+                    const healthMessage = `🏥 *CONNECTION HEALTH REPORT*
+
+🔍 *Overall Score:* ${health.score}/100
+📊 *Status:* ${health.status}
+
+📋 *Health Factors:*
+${health.factors.map(factor => {
+    const indicator = factor.good ? '✅' : '⚠️';
+    return `${indicator} ${factor.description}`;
+}).join('\n')}
+
+💡 *Quick Stats:*
+🔗 Current Status: ${connectionStatusVisualizer.currentStatus.toUpperCase()}
+⏱️ Uptime: ${connectionStatusVisualizer.getUptime()}
+🔄 Reconnects: ${connectionStatusVisualizer.reconnectAttempts}
+📊 Messages: ${connectionStatusVisualizer.totalMessages}`;
+
+                    await message.reply(healthMessage);
+                    
+                } else if (option === 'full') {
+                    // Show full status dashboard
+                    connectionStatusVisualizer.displayFullStatus();
+                    
+                    const summary = connectionStatusVisualizer.getStatusSummary();
+                    const fullMessage = `📊 *FULL CONNECTION STATUS DASHBOARD*
+
+🟢 *Current Status:* ${summary.status.toUpperCase()}
+⏰ *Last Update:* ${summary.lastUpdate ? summary.lastUpdate.toLocaleString() : 'Never'}
+⏱️ *Connection Uptime:* ${summary.uptime}
+🔄 *Reconnection Attempts:* ${summary.reconnectAttempts}
+📨 *Messages Processed:* ${summary.totalMessages}
+
+🏥 *Health Score:* ${summary.health.score}/100 (${summary.health.status})
+
+📈 *Recent Activity:*
+${connectionStatusVisualizer.statusHistory.slice(0, 3).map(entry => {
+    const emoji = connectionStatusVisualizer.getStatusEmoji(entry.status);
+    return `${emoji} ${entry.status.toUpperCase()} - ${entry.timestamp.toLocaleTimeString()}`;
+}).join('\n')}
+
+💻 Check console for detailed visual dashboard!`;
+
+                    await message.reply(fullMessage);
+                    
+                } else {
+                    // Show basic status
+                    const summary = connectionStatusVisualizer.getStatusSummary();
+                    const statusEmoji = connectionStatusVisualizer.getStatusEmoji(summary.status);
+                    
+                    const basicMessage = `${statusEmoji} *CONNECTION STATUS*
+
+🔗 *Status:* ${summary.status.toUpperCase()}
+⏱️ *Uptime:* ${summary.uptime}
+📊 *Messages:* ${summary.totalMessages}
+🏥 *Health:* ${summary.health.score}/100
+
+💡 *Options:*
+• \`.status health\` - Health assessment
+• \`.status full\` - Complete dashboard`;
+
+                    await message.reply(basicMessage);
+                }
+                
+                logger.info(`Status command executed with option: ${option || 'basic'}`);
+                
+            } catch (error) {
+                await message.reply('❌ Error retrieving status information');
+                logger.error(`Status command error: ${error.message}`);
+            }
         }
     },
 

@@ -10,6 +10,7 @@ const messageHandler = require('./handlers/messageHandler');
 const config = require('./config/settings');
 const logger = require('./utils/logger');
 const spamDetector = require('./utils/spamDetector');
+const connectionStatusVisualizer = require('./utils/connectionStatusVisualizer');
 
 class AfshuuBaileyBot {
     constructor() {
@@ -70,6 +71,9 @@ class AfshuuBaileyBot {
             });
 
             logger.info('Bailey bot initialization completed');
+            
+            // Initialize connection status visualizer
+            connectionStatusVisualizer.updateStatus('connecting', { reason: 'Bot initialization completed' });
 
         } catch (error) {
             logger.error(`Bot initialization failed: ${error.message}`);
@@ -82,6 +86,8 @@ class AfshuuBaileyBot {
         const { connection, lastDisconnect, qr } = update;
 
         if (qr) {
+            connectionStatusVisualizer.updateStatus('qr', { reason: 'QR code generated for authentication' });
+            
             console.log(`
 🎯━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🎯
 📱       SCAN QR CODE WITH PHONE     📱
@@ -101,25 +107,44 @@ class AfshuuBaileyBot {
         }
 
         if (connection === 'close') {
-            const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+            const disconnectReason = lastDisconnect?.error?.output?.statusCode;
+            const shouldReconnect = disconnectReason !== DisconnectReason.loggedOut;
+            
+            connectionStatusVisualizer.updateStatus('close', { 
+                reason: `Disconnected: ${disconnectReason}`,
+                disconnectReason: disconnectReason
+            });
             
             if (shouldReconnect) {
                 if (this.retryCount < this.maxRetries) {
                     this.retryCount++;
+                    connectionStatusVisualizer.updateStatus('connecting', { 
+                        reason: `Reconnection attempt ${this.retryCount}/${this.maxRetries}` 
+                    });
                     console.log(`🔄 Connection lost. Retrying... (${this.retryCount}/${this.maxRetries})`);
                     await delay(5000);
                     await this.initialize();
                 } else {
+                    connectionStatusVisualizer.updateStatus('disconnected', { 
+                        reason: 'Max retry attempts reached' 
+                    });
                     console.log('🚨 Max retry attempts reached. Please restart the bot.');
                     logger.error('Max retry attempts reached');
                 }
             } else {
+                connectionStatusVisualizer.updateStatus('disconnected', { 
+                    reason: 'Logged out - QR scan required' 
+                });
                 console.log('🚪 Connection closed. Please scan QR code again.');
                 logger.info('Connection closed - logged out');
             }
         } else if (connection === 'open') {
             this.retryCount = 0;
             this.connectionState = 'open';
+            
+            connectionStatusVisualizer.updateStatus('open', { 
+                reason: 'Successfully connected to WhatsApp' 
+            });
             
             const readyMessage = `
 🎉━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🎉
@@ -140,11 +165,24 @@ class AfshuuBaileyBot {
 
             console.log(readyMessage);
             logger.info('Bailey bot connected successfully with enhanced features');
+            
+            // Display full connection status
+            setTimeout(() => {
+                connectionStatusVisualizer.displayFullStatus();
+                connectionStatusVisualizer.displayConnectionHealth();
+            }, 2000);
+            
+            // Start periodic health checks
+            connectionStatusVisualizer.startPeriodicHealthCheck();
 
             // Send startup notification to owner
             if (config.OWNER_NUMBER) {
                 await this.sendStartupNotification();
             }
+        } else if (connection === 'connecting') {
+            connectionStatusVisualizer.updateStatus('connecting', { 
+                reason: 'Establishing connection to WhatsApp' 
+            });
         }
     }
 
@@ -182,6 +220,9 @@ class AfshuuBaileyBot {
                 }
             };
 
+            // Increment message counter for status tracking
+            connectionStatusVisualizer.incrementMessageCount();
+            
             // Process with Bailey message handler
             const BaileyMessageHandler = require('./handlers/baileyMessageHandler');
             await BaileyMessageHandler.handleMessage(this.sock, context);
