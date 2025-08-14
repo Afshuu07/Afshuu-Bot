@@ -190,22 +190,44 @@ class AfshuuBaileyBot {
         try {
             const message = m.messages[0];
             if (!message) return;
+            
+            console.log(`📨 New message received from: ${message.key.remoteJid}`);
+            console.log(`📝 Message type: ${Object.keys(message.message || {}).join(', ')}`);
 
             // Skip if message is from status broadcast
-            if (message.key.remoteJid === 'status@broadcast') return;
+            if (message.key.remoteJid === 'status@broadcast') {
+                console.log('⏩ Skipped: Status broadcast message');
+                return;
+            }
 
             // Skip if message is from self
-            if (message.key.fromMe) return;
+            if (message.key.fromMe) {
+                console.log('⏩ Skipped: Message from self');
+                return;
+            }
 
             // Extract message content
             const messageContent = this.extractMessageContent(message);
-            if (!messageContent) return;
-
-            // Check spam
-            const isSpam = await spamDetector.checkMessage(messageContent, message.key.remoteJid);
-            if (isSpam.isSpam) {
-                await this.handleSpamMessage(message, isSpam);
+            console.log(`💬 Message content: "${messageContent}"`);
+            if (!messageContent) {
+                console.log('⏩ Skipped: No message content extracted');
                 return;
+            }
+
+            // Check spam (skip for command messages)
+            const isCommandMessage = messageContent.startsWith(config.PREFIX || '.');
+            console.log(`🛡️ Command message detected: ${isCommandMessage}`);
+            
+            if (!isCommandMessage) {
+                const isSpam = await spamDetector.checkMessage(messageContent, message.key.remoteJid);
+                console.log(`🔍 Spam check result: ${JSON.stringify(isSpam)}`);
+                if (isSpam.isSpam) {
+                    console.log('🚫 Message blocked as spam');
+                    await this.handleSpamMessage(message, isSpam);
+                    return;
+                }
+            } else {
+                console.log('⏩ Skipping spam check for command message');
             }
 
             // Create context object similar to whatsapp-web.js format

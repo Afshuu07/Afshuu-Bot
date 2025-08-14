@@ -7,17 +7,33 @@ class BaileyMessageHandler {
         try {
             const { message, messageContent, isGroup, sender } = context;
             
+            console.log(`🔍 Bailey Handler - Processing message: "${messageContent}"`);
+            console.log(`👤 From: ${sender}, Group: ${isGroup}`);
+            
             // Skip if no message content
-            if (!messageContent) return;
+            if (!messageContent) {
+                console.log('⏩ Bailey Handler: No message content');
+                return;
+            }
 
             // Check if message starts with command prefix
-            if (!messageContent.startsWith(config.PREFIX || '.')) return;
+            const prefix = config.PREFIX || '.';
+            console.log(`🔧 Checking for prefix: "${prefix}"`);
+            if (!messageContent.startsWith(prefix)) {
+                console.log(`⏩ Bailey Handler: Message doesn't start with prefix "${prefix}"`);
+                return;
+            }
 
             // Parse command and arguments
-            const args = messageContent.slice(config.PREFIX?.length || 1).trim().split(/\s+/);
+            const args = messageContent.slice(prefix.length).trim().split(/\s+/);
             const commandName = args.shift()?.toLowerCase();
+            
+            console.log(`🎯 Command detected: "${commandName}" with args: [${args.join(', ')}]`);
 
-            if (!commandName) return;
+            if (!commandName) {
+                console.log('⏩ Bailey Handler: No command name');
+                return;
+            }
 
             // Find and execute command
             const command = commands[commandName];
