@@ -306,66 +306,186 @@ class AfshuuBaileyBot {
         try {
             const groupMetadata = await this.sock.groupMetadata(groupId);
             const participantName = participantId.split('@')[0];
+            const groupName = groupMetadata.subject || 'this amazing group';
+            const groupDescription = groupMetadata.desc || 'An awesome community space for everyone!';
+            const memberCount = groupMetadata.participants?.length || 0;
+            const adminCount = groupMetadata.participants?.filter(p => p.admin).length || 0;
 
+            // Enhanced animated welcome messages
             const welcomeMessages = [
-                `🎊 *Welcome to ${groupMetadata.subject}!* 🎊
+                `🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊
+🌟        WELCOME TO THE FAMILY!        🌟
+🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊
 
-👋 Hey @${participantName}! Great to have you here!
+👋 Hey @${participantName}! 
+🎉 You've joined *${groupName}*!
 
-🚀 *What I can help with:*
-🎵 Download audio & videos from any platform
-📹 Watermark-free video downloads
-🛡️ Advanced multi-language spam protection  
-📚 Interactive tutorials: *.tutorial*
-🎮 Game recommendations: *.games*
-👥 Simple group management tools
+📋 *About This Group:*
+${groupDescription}
 
-💡 *Quick Start:*
-• *.menu* - See all commands
-• *.video [link]* - Download videos
-• *.help* - Get assistance
+👥 *Community Stats:*
+• Members: ${memberCount} amazing people
+• Admins: ${adminCount} helpful leaders
+• Bot Status: 🟢 Fully Operational
 
-Welcome aboard! 🌟`,
+🚀 *Professional Bot Features:*
+🎵 Multi-Platform Media Downloads (1000+ sites)
+📹 Watermark-Free HD Video Processing
+🛡️ AI-Powered Multi-Language Spam Protection
+📚 Interactive Step-by-Step Tutorials
+🎮 Personalized Game Recommendation Engine
+⚡ Real-Time Connection Status Monitoring
+👥 Advanced Group Management Tools
 
-                `🌟 *Welcome @${participantName}!* 🌟
+💎 *Premium Commands:*
+• *.menu* - Complete command center
+• *.tutorial* - Interactive guidance system
+• *.video [link]* - Professional video downloader
+• *.games [category]* - AI game suggestions
+• *.status* - Real-time bot health monitoring
 
-🎭 You've joined an awesome group: *${groupMetadata.subject}*
+✨ Welcome to excellence, @${participantName}! ✨
+🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊`,
 
-✨ *Ready to explore?*
-🎯 Try *.menu* for all commands
-🎓 New here? Use *.tutorial* for guidance!
-🎵 Love media? I download from 1000+ platforms!
-🎮 Want games? Try *.games action*!
-🛡️ Stay protected with smart spam detection!
+                `🌈════════════════════════════════🌈
+🎭        GRAND ENTRANCE ALERT!        🎭
+🌈════════════════════════════════🌈
 
-Let's make this group amazing! 🚀`,
+🎪 *Ladies & Gentlemen...*
+🎊 Please welcome @${participantName}!
+🎭 To the spectacular: *${groupName}*
 
-                `🎪 *New Member Alert!* 🎪
-Welcome @${participantName} to *${groupMetadata.subject}*!
+📜 *Group Mission:*
+${groupDescription}
 
-🎨 *Available features:*
-📹 Video downloads (watermark-free)
-🎧 Audio from any platform
-🎮 Game recommendations
-🎯 Smart group interactions  
-🛡️ Advanced protection system
+🏰 *Kingdom Statistics:*
+👑 Total Members: ${memberCount}
+🛡️ Guardian Admins: ${adminCount}
+🤖 AI Assistant: Online & Enhanced
 
-🎁 *Get started:*
-• *.tutorial* - Personal guide
-• *.games [type]* - Game suggestions
-• *.welcome* - See this again
+🎯 *Elite Bot Capabilities:*
+🎬 Hollywood-Grade Media Processing
+🎵 Studio-Quality Audio Extraction
+🛡️ Military-Grade Spam Detection
+🎓 University-Level Tutorial System
+🎮 Gaming Oracle with AI Recommendations
+📊 NASA-Level Status Monitoring
+👥 Corporate-Level Group Management
 
-Welcome to the community! 🌟`
+🎨 *Artistic Command Suite:*
+• *.alive* - Bot performance showcase
+• *.menu* - Master control panel
+• *.tutorial* - Personal AI teacher
+• *.video [url]* - Media transformation magic
+• *.games [mood]* - Gaming fortune teller
+
+🌟 Your journey begins now, @${participantName}! 🌟
+🎭✨🎪✨🎨✨🎬✨🎵✨🎯✨🎮✨🎊`,
+
+                `💫▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬💫
+🚀      SPACE MISSION: NEW MEMBER!     🚀
+💫▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬💫
+
+🛸 *Mission Control to @${participantName}*
+🌟 Welcome aboard starship: *${groupName}*!
+
+📡 *Mission Briefing:*
+${groupDescription}
+
+🌍 *Crew Manifest:*
+👨‍🚀 Active Astronauts: ${memberCount}
+👩‍✈️ Mission Commanders: ${adminCount}
+🤖 AI Co-Pilot: Fully Operational
+
+🛰️ *Advanced Technology Suite:*
+🎥 Quantum Media Processing Engine
+🎵 Sonic Wave Audio Extractor
+🛡️ Plasma Shield Spam Deflector
+🎓 Neural Network Learning System
+🎮 Holographic Entertainment Portal
+📊 Warp Drive Status Monitor
+👥 Galactic Communication Hub
+
+⚡ *Command Bridge Access:*
+• *.menu* - Main navigation console
+• *.status* - Ship diagnostics
+• *.tutorial* - Training simulation
+• *.video [coordinates]* - Media teleporter
+• *.games [genre]* - Entertainment deck
+
+🚀 Prepare for an amazing adventure, @${participantName}! 🚀
+💫🛸🌟🛰️⚡🎮🎵🎥🛡️🎓📊👥💫`,
+
+                `🏛️╔═══════════════════════════════╗🏛️
+👑     ROYAL COURT ANNOUNCEMENT!     👑
+🏛️╚═══════════════════════════════╝🏛️
+
+🎺 *By Royal Decree...*
+🌟 We hereby welcome Sir/Lady @${participantName}
+🏰 To the noble realm: *${groupName}*
+
+📜 *Royal Charter:*
+${groupDescription}
+
+👑 *Court Registry:*
+🏰 Noble Citizens: ${memberCount}
+⚔️ Royal Guards (Admins): ${adminCount}
+🤖 Court Wizard (Bot): At Your Service
+
+🎭 *Royal Bot Services:*
+🎬 Imperial Media Conjuring
+🎵 Bardic Audio Enchantments
+🛡️ Dragon-Proof Spam Barriers
+📚 Scholarly Wisdom Scrolls
+🎮 Gaming Crystal Ball Predictions
+📊 Royal Observatory Monitoring
+👥 Court Herald Communications
+
+👑 *Noble Commands:*
+• *.menu* - Royal decree scrolls
+• *.tutorial* - Court wizard teachings
+• *.video [scroll]* - Media summoning spell
+• *.games [quest]* - Adventure prophecies
+• *.alive* - Wizard vitality check
+
+🌟 Long may you prosper, @${participantName}! 🌟
+🏛️👑🎺🌟🏰📜⚔️🤖🎭🎬🎵🛡️📚🎮👑`
             ];
 
+            // Select random welcome message
             const randomWelcome = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
 
+            // Send the enhanced welcome message
             await this.sock.sendMessage(groupId, {
                 text: randomWelcome,
                 mentions: [participantId]
             });
 
-            logger.info(`Welcome message sent to ${participantName} in ${groupMetadata.subject}`);
+            // Send a follow-up professional tip after 3 seconds
+            setTimeout(async () => {
+                const followUpTip = `💡 *Pro Tip for @${participantName}:*
+
+🎯 *Quick Start Guide:*
+1️⃣ Type *.menu* to see all features
+2️⃣ Try *.tutorial* for interactive learning
+3️⃣ Use *.video [any URL]* for instant downloads
+4️⃣ Explore *.games* for personalized recommendations
+
+🌟 *Group-Specific Features:*
+• Advanced spam protection is active
+• Real-time status monitoring enabled
+• Multi-language support available
+• Professional-grade media processing ready
+
+Welcome to the premium experience! 🚀`;
+
+                await this.sock.sendMessage(groupId, {
+                    text: followUpTip,
+                    mentions: [participantId]
+                });
+            }, 3000);
+
+            logger.info(`Enhanced welcome message sent to ${participantName} in ${groupMetadata.subject}`);
 
         } catch (error) {
             logger.error(`Error sending welcome message: ${error.message}`);

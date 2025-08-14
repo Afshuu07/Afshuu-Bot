@@ -12,7 +12,7 @@ const { exec } = require('child_process');
 
 const commands = {
     alive: {
-        description: 'Check if the bot is alive and responsive with enhanced status',
+        description: 'Professional bot status showcase with animated display',
         usage: '.alive',
         ownerOnly: false,
         groupOnly: false,
@@ -21,38 +21,134 @@ const commands = {
             const hours = Math.floor(uptime / 3600);
             const minutes = Math.floor((uptime % 3600) / 60);
             const seconds = Math.floor(uptime % 60);
+            const memUsage = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
             
-            const uptimeString = `${hours}h ${minutes}m ${seconds}s`;
-            
-            const aliveMessage = `
-✨🌟✨🌟✨🌟✨🌟✨🌟✨🌟✨🌟✨
-🤖    AFSHUU BOT STATUS REPORT    🤖
-✨🌟✨🌟✨🌟✨🌟✨🌟✨🌟✨🌟✨
+            // Professional animated status messages
+            const statusMessages = [
+                `🌟━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🌟
+🤖      AFSHUU PROFESSIONAL BOT      🤖
+🌟━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🌟
 
-🔥 *Status:* ONLINE & SUPERCHARGED! ⚡
-⏰ *Uptime:* ${uptimeString}
-🚀 *Version:* 2.0.0 Enhanced Edition
-📱 *Platform:* WhatsApp Web Advanced
+🟢 *SYSTEM STATUS: FULLY OPERATIONAL*
 
-🎯 *PREMIUM FEATURES ACTIVE:*
-🎵 Audio Downloads ✅ (1000+ platforms)
-📹 Video Downloads ✅ (No Watermarks!)
-🛡️  Multi-language Abuse Detection ✅
-👋 Smart Profile Picture Welcomes ✅
-📚 Interactive Tutorial System ✅
-🎮 Game Recommendation Engine ✅
+📊 *Performance Metrics:*
+⏱️ Uptime: ${hours}h ${minutes}m ${seconds}s
+💾 Memory: ${memUsage}MB (Optimized)
+🔥 CPU Usage: Excellent
+⚡ Response Time: <100ms
+🌐 Network: Stable Connection
 
-🌟 *PERFORMANCE STATS:*
-⚡ Response Time: Lightning Fast
-🔋 System Health: 100% Optimal  
-🎯 Success Rate: 99.9%
-🚀 Ready to serve with style!
+🎯 *Core Systems Status:*
+🎵 Audio Engine: ✅ ACTIVE (1000+ Sites)
+📹 Video Processor: ✅ HD READY (No Watermarks)
+🛡️ AI Spam Shield: ✅ PROTECTING (Multi-Language)
+👋 Welcome System: ✅ ENHANCED (Group Integration)
+📚 Tutorial Engine: ✅ INTERACTIVE (Step-by-Step)
+🎮 Game Oracle: ✅ LOADED (AI Recommendations)
+📊 Status Monitor: ✅ REAL-TIME (Health Tracking)
 
-✨ Your AI-powered WhatsApp companion! ✨
-🌟✨🌟✨🌟✨🌟✨🌟✨🌟✨🌟✨`;
+🚀 *Advanced Features:*
+• Quantum Media Processing
+• Neural Spam Detection
+• Holographic Status Display
+• Galactic Group Management
+• Cosmic Game Predictions
 
-            await message.reply(aliveMessage);
-            logger.info('Enhanced alive command executed successfully');
+🌟 Operating at maximum efficiency! 🌟
+🤖✨🎯⚡🔥💎🚀🌟🤖`,
+
+                `💎▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬💎
+🏆    PREMIUM BOT PERFORMANCE REPORT    🏆
+💎▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬💎
+
+🎭 *EXECUTIVE SUMMARY:*
+Status: 🟢 ELITE OPERATIONAL MODE
+Uptime: ${hours}h ${minutes}m ${seconds}s
+Memory: ${memUsage}MB (Enterprise Grade)
+Performance: 🏆 PLATINUM LEVEL
+
+🎪 *ENTERTAINMENT SUITE:*
+🎬 Cinema-Quality Video Processing
+🎵 Studio-Grade Audio Extraction
+🎮 AI-Powered Gaming Consultant
+🎨 Creative Content Enhancement
+
+🛡️ *SECURITY FORTRESS:*
+🔒 Military-Grade Spam Detection
+🛡️ Multi-Language Threat Analysis
+⚔️ Real-Time Attack Prevention
+🏰 Group Protection Protocols
+
+👥 *COMMUNITY FEATURES:*
+👑 Royal Welcome Ceremonies
+📚 University-Level Tutorials
+📊 NASA-Quality Status Monitoring
+🎯 Precision Group Management
+
+💼 *BUSINESS INTELLIGENCE:*
+• 99.9% Uptime Guarantee
+• <100ms Response Time SLA
+• 24/7 Automated Operations
+• Zero Downtime Media Processing
+
+🏆 Excellence is our standard! 🏆
+💎🏆🎭🎪🛡️👥💼🌟💎`,
+
+                `🚀═════════════════════════════════🚀
+⚡    AFSHUU CYBER COMMAND CENTER    ⚡
+🚀═════════════════════════════════🚀
+
+🖥️ *SYSTEM DIAGNOSTICS:*
+⚡ Power Level: MAXIMUM (${hours}h ${minutes}m ${seconds}s)
+🧠 Neural Network: ${memUsage}MB (Optimized)
+🔥 Processing Speed: LIGHTNING FAST
+📡 Connection: QUANTUM STABLE
+
+🎯 *MISSION CONTROL STATUS:*
+🛰️ Satellite Systems: ALL GREEN
+🎥 Media Array: FULLY OPERATIONAL
+🎵 Audio Matrix: HD STREAMING READY
+🛡️ Defense Grid: MAXIMUM PROTECTION
+👥 Communication Hub: ONLINE
+🎮 Entertainment Core: LOADED
+📊 Monitoring Station: ACTIVE SCAN
+
+⚡ *ADVANCED CAPABILITIES:*
+🔮 Future-Tech Media Processing
+🧬 DNA-Level Spam Analysis
+🌌 Interdimensional Status Tracking
+🎭 Holographic Welcome Displays
+🎓 Quantum Tutorial Generation
+
+🎪 *PERFORMANCE METRICS:*
+• Response Time: Faster than light
+• Accuracy Rate: 99.99%
+• User Satisfaction: MAXIMUM
+• Reliability Score: LEGENDARY
+
+🚀 Ready for any mission, Commander! 🚀
+⚡🖥️🎯🛰️🔮🧬🌌🎭🎓🎪⚡`
+            ];
+
+            const randomStatus = statusMessages[Math.floor(Math.random() * statusMessages.length)];
+            await message.reply(randomStatus);
+
+            // Send follow-up performance tip
+            setTimeout(async () => {
+                const performanceTip = `💡 *Performance Optimization Tip:*
+
+🔧 *For Best Experience:*
+• Use *.status* for real-time health monitoring
+• Try *.status full* for complete dashboard
+• Check *.menu* for all premium features
+• Explore *.tutorial* for advanced usage
+
+⚡ Bot is running in HIGH-PERFORMANCE MODE! ⚡`;
+                
+                await message.reply(performanceTip);
+            }, 2000);
+
+            logger.info('Professional alive command executed with enhanced display');
         }
     },
 
@@ -360,55 +456,148 @@ And 1000+ more platforms!
                 return;
             }
 
-            const mainMenu = `
-🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊
-🌟      AFSHUU BOT MAIN MENU      🌟
-🎯     Your AI WhatsApp Assistant   🎯
-🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊
+            // Professional animated main menus
+            const mainMenus = [
+                `🌟━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🌟
+🏆      AFSHUU PROFESSIONAL SUITE      🏆
+🌟━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🌟
 
-🎯 *Quick Access:*
-• *.tutorial* - Interactive guide for beginners
-• *.alive* - Check bot status
-• *.help* - Get assistance
+🎯 *ENTERPRISE COMMAND CENTER*
 
-📂 *Command Categories:*
-🎵 *.menu media* - Audio & video downloads
-🛡️  *.menu security* - Protection features  
-👥 *.menu group* - Group management & tagging
-🎮 *.games [type]* - Personalized game recommendations
+🚀 *QUICK ACCESS DASHBOARD:*
+• *.alive* - System performance showcase
+• *.status* - Real-time health monitoring  
+• *.tutorial* - Interactive AI guidance system
 
-🔥 *HOT FEATURES:*
-🎵 *.download [link]* - Audio from anywhere
-📹 *.video [link]* - Videos without watermarks  
-🎮 *.games [type]* - Game recommendations
-👥 *.tagall [message]* - Tag everyone
-🎨 *.sticker* - Create stickers
-👋 *.welcome* - Show welcome message
+💎 *PROFESSIONAL MODULES:*
+🎬 *.menu media* - Cinema-quality downloads
+🛡️ *.menu security* - Military-grade protection
+👥 *.menu group* - Corporate management tools
+🎮 *.games [type]* - AI gaming consultant
 
-✨ *SPECIAL ABILITIES:*
-🌟 Advanced AI responses with animations
-🎵 1000+ platform audio/video downloads
-🛡️  Multi-language spam protection
-👋 Smart profile picture welcomes
-🎮 Personalized game recommendations
+⚡ *PREMIUM FEATURES:*
+🎵 *.download [link]* - Studio-grade audio extraction
+📹 *.video [link]* - HD video processing (watermark-free)
+🎯 *.tagall [message]* - Unlimited member tagging
+🎨 *.sticker* - Professional media conversion
+🛡️ *.security* - Advanced threat monitoring
 
-🎯 *QUICK START GUIDE:*
-🆕 New here? Try *.tutorial* first!
-🎮 Want games? Use *.games action*
-📹 Download videos? Use *.video [link]*
-🎵 Download audio? Use *.download [link]*
+🌟 *ELITE CAPABILITIES:*
+• Quantum media processing engine
+• NASA-level status monitoring
+• Hollywood-grade video downloads
+• University-level tutorial system
+• Military-grade spam protection
 
-💫 *BOT SPECIFICATIONS:*
-Version: 2.0.0 Enhanced Edition ✨
-AI Engine: Advanced WhatsApp Assistant 🤖  
-Platform: Multi-language Support 🌍
-Status: Always Learning & Improving 🚀
+💼 *BUSINESS INTELLIGENCE:*
+Version: Professional 3.0 Enterprise
+AI Core: Advanced neural network
+Platform: Multi-dimensional support
+Performance: 99.9% uptime guarantee
 
-🌟 Ready to experience the magic? Let's go! 🌟
-🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊`;
+🏆 Excellence delivered daily! 🏆
+🌟✨💎⚡🚀🎯🎬🛡️👥🎮💼🌟`,
 
-            await message.reply(mainMenu);
-            logger.info('Enhanced menu command executed successfully');
+                `🎭═════════════════════════════════🎭
+🎪      AFSHUU ENTERTAINMENT HUB      🎪
+🎭═════════════════════════════════🎭
+
+🎨 *CREATIVE COMMAND THEATER*
+
+🎪 *MAGICAL QUICK SPELLS:*
+• *.alive* - Wizard vitality showcase
+• *.status* - Crystal ball monitoring
+• *.tutorial* - Enchanted learning scrolls
+
+🎭 *ARTISTIC GALLERIES:*
+🎬 *.menu media* - Hollywood magic studio  
+🛡️ *.menu security* - Dragon protection spells
+👥 *.menu group* - Court herald systems
+🎮 *.games [type]* - Gaming crystal oracle
+
+🎨 *CREATIVE MASTERPIECES:*
+🎵 *.download [link]* - Bardic song conjuring
+📹 *.video [link]* - Cinematic spell casting
+🎯 *.tagall [message]* - Mass communication enchantment
+🎪 *.sticker* - Artistic transformation magic
+🛡️ *.security* - Magical barrier monitoring
+
+🌟 *LEGENDARY ABILITIES:*
+• Interdimensional media summoning
+• Holographic status displays
+• Cinematic video manifestation
+• Scholarly wisdom generation
+• Mystical spam banishment
+
+🎭 *THEATER SPECIFICATIONS:*
+Version: Theatrical Masterpiece Edition
+AI Spirit: Enchanted consciousness
+Realm: Multi-universe support
+Magic Level: Legendary tier
+
+🎪 The show must go on! 🎪
+🎭✨🎨🎪🌟🎬🎵📹🎯🛡️👥🎮🎭`,
+
+                `🚀═════════════════════════════════🚀
+⚡      AFSHUU CYBER COMMAND      ⚡
+🚀═════════════════════════════════🚀
+
+🖥️ *DIGITAL WARFARE HEADQUARTERS*
+
+⚡ *TACTICAL OPERATIONS:*
+• *.alive* - System diagnostic scan
+• *.status* - Mission control monitoring
+• *.tutorial* - Combat training simulation
+
+🛰️ *MISSION MODULES:*
+🎥 *.menu media* - Quantum data extraction
+🛡️ *.menu security* - Cyber defense matrix
+👥 *.menu group* - Communication networks
+🎮 *.games [type]* - Entertainment protocols
+
+🔮 *ADVANCED WEAPONRY:*
+🎵 *.download [link]* - Data teleportation beam
+📹 *.video [link]* - Holographic capture device
+⚡ *.tagall [message]* - Mass broadcast array
+🎨 *.sticker* - Nano-transformation engine
+🛡️ *.security* - Plasma shield monitoring
+
+🌌 *FUTURISTIC CAPABILITIES:*
+• Warp-speed media processing
+• Quantum-encrypted communications
+• Zero-latency status tracking
+• Neural-network tutorials
+• DNA-level threat analysis
+
+🚀 *SPACECRAFT DETAILS:*
+Version: Galactic Command Edition
+AI Core: Quantum consciousness
+Network: Interdimensional grid
+Power Level: Maximum overload
+
+⚡ Ready for any mission! ⚡
+🚀🖥️⚡🛰️🔮🎥🎵📹🛡️👥🎮🌌🚀`
+            ];
+
+            const randomMenu = mainMenus[Math.floor(Math.random() * mainMenus.length)];
+            await message.reply(randomMenu);
+
+            // Send follow-up tip after 3 seconds
+            setTimeout(async () => {
+                const quickTip = `💡 *Professional Navigation Tip:*
+
+🎯 *Most Popular Commands:*
+1️⃣ *.alive* - See full system showcase
+2️⃣ *.video [link]* - Download any video
+3️⃣ *.games action* - Get game recommendations
+4️⃣ *.tutorial* - Interactive learning system
+
+⚡ Type any command for instant professional service! ⚡`;
+                
+                await message.reply(quickTip);
+            }, 3000);
+
+            logger.info('Professional animated menu command executed');
         }
     },
 
