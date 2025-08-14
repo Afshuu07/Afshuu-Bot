@@ -334,6 +334,34 @@ class SpamDetector {
         return report;
     }
 
+    // Bailey-compatible spam check method
+    async checkMessage(messageContent, remoteJid) {
+        try {
+            if (!messageContent || typeof messageContent !== 'string') {
+                return { isSpam: false, severity: 'low', patterns: [] };
+            }
+
+            const userId = remoteJid.split('@')[0];
+            
+            // Create a fake contact object for compatibility with existing analyzeMessage
+            const contact = {
+                id: { user: userId }
+            };
+
+            const analysis = this.analyzeMessage(messageContent, contact);
+            
+            return {
+                isSpam: analysis.isSpam,
+                severity: analysis.severity,
+                patterns: analysis.reasons,
+                confidence: analysis.confidence
+            };
+        } catch (error) {
+            logger.error(`Error in spam check: ${error.message}`);
+            return { isSpam: false, severity: 'low', patterns: [] };
+        }
+    }
+
     // Clean up old data periodically
     cleanup() {
         const now = Date.now();
