@@ -21,7 +21,7 @@ class MessageHandler {
             const contact = await message.getContact();
             
             // Analyze message for spam/suspicious content
-            if (message.body && !message.fromMe) {
+            if (message.body) { // Allow self messages - removed !message.fromMe check
                 const spamAnalysis = spamDetector.analyzeMessage(message.body, contact);
                 
                 if (spamAnalysis.isSpam || spamAnalysis.isSuspicious) {

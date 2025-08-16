@@ -1237,8 +1237,15 @@ This may take a few minutes for large videos.`);
                 const text = args.join(' ') || 'hidetag';
                 const mentions = [];
                 
+                // Get participants in Bailey format
                 for (let participant of chat.participants) {
-                    mentions.push(`${participant.id.user}@s.whatsapp.net`);
+                    if (participant.id && participant.id.user) {
+                        mentions.push(`${participant.id.user}@s.whatsapp.net`);
+                    } else if (typeof participant === 'string') {
+                        mentions.push(participant);
+                    } else if (participant.id) {
+                        mentions.push(participant.id);
+                    }
                 }
 
                 // Simple hidetag - just send the message with mentions
