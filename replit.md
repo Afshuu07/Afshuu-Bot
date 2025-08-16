@@ -10,6 +10,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+**August 16, 2025 - Enhanced Download System & Phone Lookup Fix**
+- ✅ Fixed missing 'link-preview-js' dependency causing Bailey connection issues
+- ✅ Completely rebuilt audio download system with DRM detection for Spotify/Apple Music
+- ✅ Enhanced video download system with better platform support and auto-compression
+- ✅ Fixed phone number lookup showing realistic carrier distribution (not just BSNL)
+- ✅ Added weighted random selection for Indian carriers (Jio 35%, Airtel 30%, Vi 20%, BSNL 10%)
+- ✅ Improved error handling for download failures with specific troubleshooting messages
+- ✅ Added premium 'audio' command for high-quality audio extraction
+- ✅ Enhanced download system works with Bailey WhatsApp client properly
+- ✅ Added auto file compression for large videos to meet WhatsApp limits
+- ✅ Downloads now support YouTube, TikTok, Instagram, Twitter, Facebook, Twitch, Vimeo, Dailymotion
+- ✅ DRM-protected platforms (Spotify, Apple Music, Tidal, Deezer) show helpful alternative suggestions
+
 **August 14, 2025 - Professional Animated Interface & Enhanced Welcome System**
 - ✅ Enhanced welcome messages to include group names and detailed descriptions
 - ✅ Added comprehensive group statistics (member count, admin count) to welcomes

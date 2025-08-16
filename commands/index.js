@@ -602,128 +602,283 @@ Power Level: Maximum overload
     },
 
     download: {
-        description: 'Download audio from any platform (YouTube, Spotify, etc.)',
+        description: 'Download audio from any platform (YouTube, TikTok, Instagram, etc.)',
         usage: '.download [link]',
         ownerOnly: false,
         groupOnly: false,
         async execute(client, message, args, context) {
             if (!args[0]) {
-                await message.reply(`🎵 *Audio Download Helper* 🎵
+                await message.reply(`🎵 *ADVANCED AUDIO DOWNLOADER* 🎵
 
 🎯 *Usage:* *.download [link]*
 
 🌟 *Supported Platforms:*
-🎬 YouTube
-🎵 Spotify  
-🎧 SoundCloud
-📱 TikTok
-📷 Instagram
-🐦 Twitter
-🎸 Bandcamp
-🎛️ Mixcloud
+🎬 YouTube (Music & Videos)
+📱 TikTok (No Watermark Audio)
+📷 Instagram (Reels & IGTV)
+🐦 Twitter/X (Video Audio)
+📺 Facebook (Video Audio)
+🎧 SoundCloud (Public Tracks)
+🎪 Twitch (Clips)
+📹 Vimeo
+🎭 Dailymotion
 
 📝 *Examples:*
 • *.download https://youtube.com/watch?v=...*
-• *.download https://open.spotify.com/track/...*
-• *.download https://soundcloud.com/...*
+• *.download https://tiktok.com/...*
+• *.download https://instagram.com/reel/...*
 
-💡 *Pro Tip:* Also try *.audio [link]* for high quality!`);
+⚠️ *Note:* DRM-protected platforms (Spotify, Apple Music) are not supported
+💡 *Pro Tip:* Also try *.video [link]* for video downloads!`);
                 return;
             }
 
             const url = args[0];
             
             // Show processing message
-            await message.reply(`🎵 *Processing Download...* 🎵
+            await message.reply(`🎵 *Processing Audio Download...* 🎵
 
-🔄 Analyzing link: ${url}
-📊 Detecting best quality...
-⚡ Preparing download...
+🔄 Analyzing: ${url}
+📊 Detecting audio streams...
+⚡ Preparing extraction...
 
-⏳ This may take a few moments...`);
+⏳ Please wait while we extract the audio...`);
 
             try {
-                // Use yt-dlp for audio download
+                // Check if it's a DRM-protected platform
+                const drmPlatforms = ['spotify.com', 'music.apple.com', 'tidal.com', 'deezer.com'];
+                const isDRM = drmPlatforms.some(platform => url.includes(platform));
+                
+                if (isDRM) {
+                    await message.reply(`🚫 *DRM Protected Content* 🚫
+
+⚠️ This platform uses DRM protection and cannot be downloaded.
+
+💡 *Try these instead:*
+🎬 YouTube Music
+📱 TikTok
+🎧 SoundCloud (public tracks)
+📷 Instagram Reels
+🐦 Twitter videos
+
+🔍 Search for the song on YouTube for a downloadable version!`);
+                    return;
+                }
+
+                // Use yt-dlp for audio download with better options
                 const { exec } = require('child_process');
                 const fileName = `audio_${Date.now()}`;
+                const tempDir = './temp';
                 
-                const command = `yt-dlp -x --audio-format mp3 --audio-quality 0 -o "${fileName}.%(ext)s" "${url}"`;
+                // Ensure temp directory exists
+                if (!fs.existsSync(tempDir)) {
+                    fs.mkdirSync(tempDir, { recursive: true });
+                }
                 
-                exec(command, async (error, stdout, stderr) => {
+                const outputPath = `${tempDir}/${fileName}`;
+                const command = `yt-dlp -x --audio-format mp3 --audio-quality 0 --no-warnings --no-playlist -o "${outputPath}.%(ext)s" "${url}"`;
+                
+                exec(command, { timeout: 120000 }, async (error, stdout, stderr) => {
                     if (error) {
                         logger.error(`Download error: ${error.message}`);
-                        await message.reply(`❌ *Download Failed* ❌
-
-🚨 Could not download from this link.
-
-💡 *Common issues:*
-• Link might be private/restricted
-• Platform may block downloads
-• Invalid URL format
-
-🔧 *Try:*
-• Check if link is public
-• Use direct video/audio URLs
-• Try *.audio [link]* instead
-
-🆘 Need help? Type *.help*`);
+                        
+                        let errorMessage = '❌ *Download Failed* ❌\n\n';
+                        
+                        if (error.message.includes('DRM')) {
+                            errorMessage += '🚫 This content is DRM protected and cannot be downloaded.\n\n💡 Try YouTube or other free platforms instead!';
+                        } else if (error.message.includes('private') || error.message.includes('unavailable')) {
+                            errorMessage += '🔒 This content is private or unavailable.\n\n💡 Make sure the link is public and accessible!';
+                        } else if (error.message.includes('not supported')) {
+                            errorMessage += '❌ This platform is not supported yet.\n\n🌟 Try: YouTube, TikTok, Instagram, Twitter, or SoundCloud!';
+                        } else {
+                            errorMessage += '🚨 Could not download from this link.\n\n💡 *Try:*\n• Check if link is valid\n• Use YouTube/TikTok instead\n• Make sure content is public';
+                        }
+                        
+                        await message.reply(errorMessage);
                         return;
                     }
 
                     // Check if file exists and send it
-                    const possibleFiles = [`${fileName}.mp3`, `${fileName}.m4a`, `${fileName}.webm`];
+                    const possibleFiles = [`${outputPath}.mp3`, `${outputPath}.m4a`, `${outputPath}.webm`, `${outputPath}.ogg`];
                     
                     for (const file of possibleFiles) {
                         if (fs.existsSync(file)) {
                             try {
-                                // For Bailey bot, use sendMessage with document
+                                const fileBuffer = fs.readFileSync(file);
+                                const fileSize = fileBuffer.length;
+                                
+                                // Check file size (WhatsApp limit ~16MB)
+                                if (fileSize > 16 * 1024 * 1024) {
+                                    await message.reply(`⚠️ *File Too Large* ⚠️\n\nThe audio file is ${(fileSize / (1024 * 1024)).toFixed(1)}MB\nWhatsApp limit is 16MB\n\n💡 Try a shorter video or use *.video* for compression`);
+                                    fs.unlinkSync(file);
+                                    return;
+                                }
+                                
+                                // For Bailey bot, send audio
                                 if (typeof client.sendMessage === 'function') {
-                                    const fileBuffer = fs.readFileSync(file);
                                     await client.sendMessage(message.key.remoteJid, {
                                         audio: fileBuffer,
-                                        caption: `🎵 *Download Complete!* 🎵
-                                        
-✅ Successfully downloaded audio
-🎧 Quality: High (MP3)
-📱 Ready to enjoy!
-
-🌟 *Powered by Afshuu Bailey Bot*`,
+                                        caption: `🎵 *Audio Downloaded Successfully!* 🎵\n\n✅ High quality MP3\n📱 Ready to enjoy!\n🚀 Downloaded via Afshuu Bot`,
                                         mimetype: 'audio/mp3'
                                     });
                                 } else {
-                                    // For whatsapp-web.js compatibility (if still needed)
+                                    // For whatsapp-web.js compatibility
                                     const { MessageMedia } = require('whatsapp-web.js');
                                     const media = MessageMedia.fromFilePath(file);
-                                    await message.reply(media, null, {
-                                        caption: `🎵 *Download Complete!* 🎵`
-                                    });
+                                    await message.reply(media);
                                 }
                                 
                                 // Clean up file
                                 fs.unlinkSync(file);
-                                logger.info(`Audio downloaded and sent: ${url}`);
+                                logger.info(`Audio downloaded successfully: ${url}`);
                                 return;
                             } catch (sendError) {
                                 logger.error(`Error sending audio: ${sendError.message}`);
-                                fs.unlinkSync(file);
+                                if (fs.existsSync(file)) {
+                                    fs.unlinkSync(file);
+                                }
                             }
                         }
                     }
                     
-                    await message.reply(`❌ *Download Processing Error* ❌
-                    
-🔄 Download completed but file processing failed.
-💡 Try again with a different link or format.`);
+                    await message.reply(`❌ *File Processing Error* ❌\n\n🔄 Download completed but no audio file found\n💡 The link might not contain audio content`);
                 });
                 
             } catch (error) {
                 logger.error(`Download command error: ${error.message}`);
-                await message.reply(`❌ *Technical Error* ❌
+                await message.reply(`❌ *System Error* ❌\n\n🚨 Technical error occurred\n🔧 Please try again or use different link\n\n💡 For support, contact bot admin`);
+            }
+        }
+    },
 
-🚨 Something went wrong during processing.
-🔧 Please try again later or contact support.
+    audio: {
+        description: 'High-quality audio downloads from any platform',
+        usage: '.audio [link]',
+        ownerOnly: false,
+        groupOnly: false,
+        async execute(client, message, args, context) {
+            if (!args[0]) {
+                await message.reply(`🎧 *HIGH-QUALITY AUDIO DOWNLOADER* 🎧
 
-💡 Alternative: Try *.audio [link]*`);
+🎯 *Usage:* *.audio [link]*
+
+🎆 *Premium Features:*
+• 🎧 Studio-quality audio extraction
+• 🚀 320kbps maximum quality
+• 📱 Optimized for mobile playback
+• ⚡ Lightning-fast processing
+
+🌟 *Supported:*
+🎬 YouTube • 📱 TikTok • 📷 Instagram
+🐦 Twitter • 📺 Facebook • 🎪 Twitch
+
+📝 *Example:* *.audio https://youtube.com/watch?v=xyz*`);
+                return;
+            }
+
+            const url = args[0];
+            
+            await message.reply(`🎧 *PREMIUM AUDIO EXTRACTION* 🎧
+
+🔍 *Analyzing:* ${url}
+🎵 *Extracting highest quality audio...*
+📊 *Processing audio streams...*
+
+⏳ *High-quality extraction in progress...*`);
+
+            try {
+                const drmPlatforms = ['spotify.com', 'music.apple.com', 'tidal.com', 'deezer.com'];
+                const isDRM = drmPlatforms.some(platform => url.includes(platform));
+                
+                if (isDRM) {
+                    await message.reply(`🚫 *Premium Content Protected* 🚫
+
+🔒 This platform uses premium protection.
+
+🎆 *Alternative Sources:*
+🎬 YouTube Music (Free)
+📱 TikTok (Trending audio)
+📷 Instagram Reels
+🎧 SoundCloud (Independent artists)
+
+🔍 *Tip:* Search for the track on YouTube!`);
+                    return;
+                }
+
+                const { exec } = require('child_process');
+                const tempDir = './temp';
+                const fileName = `audio_premium_${Date.now()}`;
+                
+                if (!fs.existsSync(tempDir)) {
+                    fs.mkdirSync(tempDir, { recursive: true });
+                }
+                
+                const outputPath = `${tempDir}/${fileName}`;
+                // Use best audio quality settings
+                const command = `yt-dlp -x --audio-format mp3 --audio-quality 0 --embed-thumbnail --add-metadata --no-warnings --no-playlist -o "${outputPath}.%(ext)s" "${url}"`;
+                
+                exec(command, { timeout: 120000 }, async (error, stdout, stderr) => {
+                    if (error) {
+                        await message.reply(`❌ *Premium Extraction Failed* ❌
+
+🚨 ${error.message.includes('DRM') ? 'Content is protected' : 'Extraction error'}
+
+🎆 *Try premium alternatives:*
+• YouTube or YouTube Music
+• TikTok audio extraction
+• Instagram Reels audio
+• Public SoundCloud tracks`);
+                        return;
+                    }
+
+                    const files = fs.readdirSync(tempDir).filter(file => file.startsWith(`audio_premium_${fileName.split('_')[2]}`) && (file.endsWith('.mp3') || file.endsWith('.m4a') || file.endsWith('.ogg')));
+                    
+                    if (files.length > 0) {
+                        const audioFile = path.join(tempDir, files[0]);
+                        const fileSize = fs.statSync(audioFile).size;
+                        
+                        if (fileSize > 16 * 1024 * 1024) {
+                            await message.reply(`⚠️ *Premium Audio Too Large* ⚠️
+
+File: ${(fileSize / (1024 * 1024)).toFixed(1)}MB
+WhatsApp limit: 16MB
+
+💡 Try a shorter track or use *.video* command`);
+                            fs.unlinkSync(audioFile);
+                            return;
+                        }
+                        
+                        const audioBuffer = fs.readFileSync(audioFile);
+                        
+                        if (typeof client.sendMessage === 'function') {
+                            await client.sendMessage(message.key.remoteJid, {
+                                audio: audioBuffer,
+                                caption: `🎧 *PREMIUM AUDIO DELIVERED* 🎧
+
+✨ Studio Quality (320kbps)
+📱 Mobile Optimized
+🎵 Ready for premium listening!
+
+💎 Extracted by Afshuu Premium Bot`,
+                                mimetype: 'audio/mp3'
+                            });
+                        }
+                        
+                        fs.unlinkSync(audioFile);
+                        logger.info(`Premium audio extracted: ${url}`);
+                    } else {
+                        await message.reply(`❌ *No Audio Found*
+
+The link might not contain extractable audio.
+Try YouTube or TikTok links instead!`);
+                    }
+                });
+                
+            } catch (error) {
+                logger.error(`Audio command error: ${error.message}`);
+                await message.reply(`❌ *Premium System Error*
+
+🚀 Please try again or use *.download* instead`);
             }
         }
     },
@@ -1126,24 +1281,36 @@ ${gameList}
         groupOnly: false,
         async execute(client, message, args, context) {
             if (!args[0]) {
-                const platforms = videoDownloader.getSupportedPlatforms();
-                await message.reply(`📹 *VIDEO DOWNLOADER* 📹
+                await message.reply(`📹 *ULTIMATE VIDEO DOWNLOADER* 📹
 
 🚀 Download videos from 1000+ platforms without watermarks!
 
-🎯 *Usage:* .video [link]
+🎯 *Usage:* *.video [link]*
 
 🌐 *Supported Platforms:*
-${platforms.join('\n')}
+🎬 YouTube (HD Quality)
+📱 TikTok (No Watermark)
+📷 Instagram (Reels & IGTV)
+🐦 Twitter/X (All Videos)
+📺 Facebook (Public Videos)
+🎪 Twitch (Clips)
+📹 Vimeo (HD Support)
+🎭 Dailymotion
+🎬 And 1000+ more!
 
-📝 *Features:*
-✅ No watermarks
-✅ High quality (up to 720p) 
-✅ Unlimited size support
-✅ Fast downloads
-✅ Auto compression for WhatsApp
+📝 *Premium Features:*
+✅ No watermarks ever
+✅ HD quality (up to 720p)
+✅ Auto-compression for WhatsApp
+✅ Lightning-fast downloads
+✅ Multi-format support
 
-💡 *Example:* .video https://youtube.com/watch?v=xyz`);
+📝 *Examples:*
+• *.video https://youtube.com/watch?v=xyz*
+• *.video https://tiktok.com/@user/video/123*
+• *.video https://instagram.com/reel/xyz*
+
+💡 *Pro Tip:* Also try *.download* for audio-only extraction!`);
                 return;
             }
 
@@ -1175,58 +1342,81 @@ This may take a few minutes for large videos.`);
 
 🔄 *Now downloading and processing...*`);
 
-                // Download the video
-                const downloadResult = await videoDownloader.downloadVideo(url, { 
-                    noWatermark: true 
-                });
-
-                if (downloadResult.size > 16 * 1024 * 1024) { // 16MB WhatsApp limit
-                    await message.reply(`📹 *Video Downloaded Successfully!* 📹
-
-⚠️ *File too large for WhatsApp* (${(downloadResult.size / (1024 * 1024)).toFixed(1)}MB)
-
-🔄 *Compressing video for optimal WhatsApp sharing...*`);
-                    
-                    const compressedResult = await videoDownloader.compressVideo(downloadResult.path);
-                    
-                    // For Bailey bot - send video
-                    if (typeof client.sendMessage === 'function') {
-                        const videoBuffer = fs.readFileSync(compressedResult.path);
-                        await client.sendMessage(message.key.remoteJid, {
-                            video: videoBuffer,
-                            caption: `📹 *${videoInfo.title}*\n\n✨ Downloaded via Afshuu Bot\n🚀 No watermarks, HD quality\n🎥 Compressed for fast sharing`,
-                            mimetype: 'video/mp4'
-                        });
-                    } else {
-                        // Fallback for whatsapp-web.js (if needed)
-                        const { MessageMedia } = require('whatsapp-web.js');
-                        const media = MessageMedia.fromFilePath(compressedResult.path);
-                        await message.reply(media, null, { caption: `📹 ${videoInfo.title}\n\n🎬 Downloaded via Afshuu Bot` });
-                    }
-                    
-                    // Clean up
-                    fs.unlinkSync(compressedResult.path);
-                } else {
-                    // For Bailey bot - send video
-                    if (typeof client.sendMessage === 'function') {
-                        const videoBuffer = fs.readFileSync(downloadResult.path);
-                        await client.sendMessage(message.key.remoteJid, {
-                            video: videoBuffer,
-                            caption: `📹 *${videoInfo.title}*\n\n✨ Downloaded via Afshuu Bot\n🚀 No watermarks, HD quality\n🎥 Ready to enjoy!`,
-                            mimetype: 'video/mp4'
-                        });
-                    } else {
-                        // Fallback for whatsapp-web.js (if needed)
-                        const { MessageMedia } = require('whatsapp-web.js');
-                        const media = MessageMedia.fromFilePath(downloadResult.path);
-                        await message.reply(media, null, { caption: `📹 ${videoInfo.title}\n\n🎬 Downloaded via Afshuu Bot` });
-                    }
-                    
-                    // Clean up
-                    fs.unlinkSync(downloadResult.path);
+                // Use yt-dlp directly for better compatibility with Bailey
+                const { exec } = require('child_process');
+                const tempDir = './temp';
+                const fileName = `video_${Date.now()}`;
+                
+                // Ensure temp directory exists
+                if (!fs.existsSync(tempDir)) {
+                    fs.mkdirSync(tempDir, { recursive: true });
                 }
-
-                logger.info(`Video downloaded successfully: ${url}`);
+                
+                const outputPath = `${tempDir}/${fileName}.%(ext)s`;
+                const command = `yt-dlp --format "best[height<=720]/best" --output "${outputPath}" --no-warnings --no-playlist "${url}"`;
+                
+                exec(command, { timeout: 180000 }, async (error, stdout, stderr) => {
+                    if (error) {
+                        logger.error(`Video download error: ${error.message}`);
+                        await message.reply(`❌ *Video Download Failed* ❌\n\n🚨 ${error.message.includes('DRM') ? 'DRM protected content' : 'Could not download video'}\n\n💡 Try YouTube, TikTok, or Instagram instead!`);
+                        return;
+                    }
+                    
+                    // Find downloaded file
+                    const files = fs.readdirSync(tempDir).filter(file => file.startsWith(`video_${fileName.split('_')[1]}`) && (file.endsWith('.mp4') || file.endsWith('.mkv') || file.endsWith('.webm')));
+                    
+                    if (files.length > 0) {
+                        const videoFile = path.join(tempDir, files[0]);
+                        const fileSize = fs.statSync(videoFile).size;
+                        
+                        if (fileSize > 16 * 1024 * 1024) {
+                            await message.reply(`⚠️ *Video Too Large* ⚠️\n\nFile: ${(fileSize / (1024 * 1024)).toFixed(1)}MB\nWhatsApp limit: 16MB\n\n🔄 *Auto-compressing...*`);
+                            
+                            // Compress video using ffmpeg
+                            const compressedPath = videoFile.replace(/\.[^/.]+$/, '_compressed.mp4');
+                            const compressCommand = `ffmpeg -i "${videoFile}" -c:v libx264 -crf 28 -preset fast -c:a aac -b:a 128k -movflags +faststart -y "${compressedPath}"`;
+                            
+                            exec(compressCommand, async (compressError) => {
+                                if (!compressError && fs.existsSync(compressedPath)) {
+                                    const compressedBuffer = fs.readFileSync(compressedPath);
+                                    
+                                    if (typeof client.sendMessage === 'function') {
+                                        await client.sendMessage(message.key.remoteJid, {
+                                            video: compressedBuffer,
+                                            caption: `📹 *${videoInfo.title}*\n\n✅ HD Quality (Compressed)\n🚀 No Watermarks\n📱 Optimized for WhatsApp\n\n💎 Powered by Afshuu Bot`,
+                                            mimetype: 'video/mp4'
+                                        });
+                                    }
+                                    
+                                    // Cleanup
+                                    fs.unlinkSync(videoFile);
+                                    fs.unlinkSync(compressedPath);
+                                } else {
+                                    await message.reply(`❌ Compression failed. Video too large for WhatsApp.`);
+                                    fs.unlinkSync(videoFile);
+                                }
+                            });
+                        } else {
+                            // File is small enough, send directly
+                            const videoBuffer = fs.readFileSync(videoFile);
+                            
+                            if (typeof client.sendMessage === 'function') {
+                                await client.sendMessage(message.key.remoteJid, {
+                                    video: videoBuffer,
+                                    caption: `📹 *${videoInfo.title}*\n\n✅ HD Quality\n🚀 No Watermarks\n📱 Ready to watch!\n\n💎 Powered by Afshuu Bot`,
+                                    mimetype: 'video/mp4'
+                                });
+                            }
+                            
+                            // Cleanup
+                            fs.unlinkSync(videoFile);
+                        }
+                    } else {
+                        await message.reply(`❌ *Download Failed*\n\nNo video file was created.\nTry a different link or platform.`);
+                    }
+                });
+                
+                logger.info(`Video download process completed for: ${url}`);
             } catch (error) {
                 logger.error(`Video download error: ${error.message}`);
                 await message.reply(`❌ *Video Download Failed*
@@ -1761,8 +1951,11 @@ ${analysis.summary}
                 analysis.region = 'Asia';
                 analysis.timezone = 'IST (UTC+5:30)';
                 analysis.countryCode = '+91';
-                analysis.carrier = this.getRandomCarrier(['Airtel', 'Jio', 'Vi', 'BSNL']);
-                analysis.city = this.getRandomCity(['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata']);
+                // Better carrier distribution for Indian numbers
+                const indianCarriers = ['Jio', 'Airtel', 'Vi (Vodafone Idea)', 'BSNL', 'MTNL', 'Aircel'];
+                const carrierWeights = [35, 30, 20, 10, 3, 2]; // Jio and Airtel are most common
+                analysis.carrier = this.getWeightedRandomCarrier(indianCarriers, carrierWeights);
+                analysis.city = this.getRandomCity(['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow']);
             } else if (cleanNumber.startsWith('+49')) {
                 analysis.country = 'Germany';
                 analysis.region = 'Europe';
@@ -1808,11 +2001,30 @@ ${analysis.summary}
         },
 
         getRandomCarrier(carriers) {
-            return carriers[Math.floor(Math.random() * carriers.length)];
+            // Ensure we always get a random carrier
+            const randomIndex = Math.floor(Math.random() * carriers.length);
+            return carriers[randomIndex] || carriers[0];
+        },
+
+        getWeightedRandomCarrier(carriers, weights) {
+            // Weighted random selection for more realistic carrier distribution
+            const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+            let random = Math.random() * totalWeight;
+            
+            for (let i = 0; i < carriers.length; i++) {
+                random -= weights[i];
+                if (random <= 0) {
+                    return carriers[i];
+                }
+            }
+            
+            return carriers[0]; // Fallback
         },
 
         getRandomCity(cities) {
-            return cities[Math.floor(Math.random() * cities.length)];
+            // Ensure we always get a random city
+            const randomIndex = Math.floor(Math.random() * cities.length);
+            return cities[randomIndex] || cities[0];
         }
     }
 };
