@@ -200,11 +200,11 @@ class AfshuuBaileyBot {
                 return;
             }
 
-            // Skip if message is from self
-            if (message.key.fromMe) {
-                console.log('⏩ Skipped: Message from self');
-                return;
-            }
+            // Allow self messages now - commenting out the skip
+            // if (message.key.fromMe) {
+            //     console.log('⏩ Skipped: Message from self');
+            //     return;
+            // }
 
             // Extract message content
             const messageContent = this.extractMessageContent(message);
@@ -311,181 +311,207 @@ class AfshuuBaileyBot {
             const memberCount = groupMetadata.participants?.length || 0;
             const adminCount = groupMetadata.participants?.filter(p => p.admin).length || 0;
 
-            // Enhanced animated welcome messages
-            const welcomeMessages = [
-                `🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊
-🌟        WELCOME TO THE FAMILY!        🌟
-🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊
+            // Get profile picture URL
+            let profilePicUrl = '';
+            try {
+                profilePicUrl = await this.sock.profilePictureUrl(participantId, 'image');
+            } catch (error) {
+                logger.warn(`Could not get profile picture for ${participantId}`);
+            }
 
-👋 Hey @${participantName}! 
-🎉 You've joined *${groupName}*!
+            // Hacker-styled welcome messages with profile pictures
+            const hackerWelcomeMessages = [
+                `⚡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━⚡
+🔥      SYSTEM BREACH DETECTED!      🔥  
+⚡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━⚡
 
-📋 *About This Group:*
+💀 *HACKER ALERT:* @${participantName}
+🖥️ *ACCESS GRANTED TO:* ${groupName}
+
+📊 *SYSTEM SCAN:*
 ${groupDescription}
 
-👥 *Community Stats:*
-• Members: ${memberCount} amazing people
-• Admins: ${adminCount} helpful leaders
-• Bot Status: 🟢 Fully Operational
+🔍 *NETWORK STATUS:*
+👥 Connected Users: ${memberCount}
+🛡️ Admin Privileges: ${adminCount}
+🤖 AI Guardian: ONLINE
 
-🚀 *Professional Bot Features:*
-🎵 Multi-Platform Media Downloads (1000+ sites)
-📹 Watermark-Free HD Video Processing
-🛡️ AI-Powered Multi-Language Spam Protection
-📚 Interactive Step-by-Step Tutorials
-🎮 Personalized Game Recommendation Engine
-⚡ Real-Time Connection Status Monitoring
-👥 Advanced Group Management Tools
+💻 *HACKING TOOLS LOADED:*
+🎵 Media Extraction Protocol
+📹 Video Decryption Engine  
+🛡️ Anti-Spam Firewall
+📚 Knowledge Database Access
+🎮 Entertainment Backdoor
+⚡ Real-Time Monitoring
 
-💎 *Premium Commands:*
-• *.menu* - Complete command center
-• *.tutorial* - Interactive guidance system
-• *.video [link]* - Professional video downloader
-• *.games [category]* - AI game suggestions
-• *.status* - Real-time bot health monitoring
+🔥 *EXPLOIT COMMANDS:*
+• *.menu* - Access control panel
+• *.tutorial* - Hacking tutorials
+• *.video [target]* - Extract media
+• *.games* - Fun exploits
+• *.status* - System diagnostics
 
-✨ Welcome to excellence, @${participantName}! ✨
-🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊✨🎊`,
+${profilePicUrl ? `📸 Profile Acquired: ${profilePicUrl}` : '📸 Profile: Anonymous'}
 
-                `🌈════════════════════════════════🌈
-🎭        GRAND ENTRANCE ALERT!        🎭
-🌈════════════════════════════════🌈
+⚡ Welcome to the underground, @${participantName}! ⚡
+💀🔥🖥️💻🔍🛡️📚🎮⚡💀`,
 
-🎪 *Ladies & Gentlemen...*
-🎊 Please welcome @${participantName}!
-🎭 To the spectacular: *${groupName}*
+                `🟢━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🟢
+🔰      MATRIX CODE INJECTION!      🔰
+🟢━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🟢
 
-📜 *Group Mission:*
+🕳️ *ANOMALY DETECTED:* @${participantName}
+💚 *ENTERING THE MATRIX:* ${groupName}
+
+📡 *DATABASE QUERY:*
 ${groupDescription}
 
-🏰 *Kingdom Statistics:*
-👑 Total Members: ${memberCount}
-🛡️ Guardian Admins: ${adminCount}
-🤖 AI Assistant: Online & Enhanced
+🔢 *BINARY ANALYSIS:*
+👥 Active Nodes: ${memberCount}
+🔐 Root Access: ${adminCount}
+🤖 AI Sentinel: ACTIVATED
 
-🎯 *Elite Bot Capabilities:*
-🎬 Hollywood-Grade Media Processing
-🎵 Studio-Quality Audio Extraction
-🛡️ Military-Grade Spam Detection
-🎓 University-Level Tutorial System
-🎮 Gaming Oracle with AI Recommendations
-📊 NASA-Level Status Monitoring
-👥 Corporate-Level Group Management
+🌐 *CYBER ARSENAL:*
+🎵 Audio Stream Hijacker
+📹 Visual Data Miner
+🛡️ Trojan Defense System
+📚 Info Warfare Database
+🎮 Digital Playground
+⚡ Live Network Scanner
 
-🎨 *Artistic Command Suite:*
-• *.alive* - Bot performance showcase
-• *.menu* - Master control panel
-• *.tutorial* - Personal AI teacher
-• *.video [url]* - Media transformation magic
-• *.games [mood]* - Gaming fortune teller
+🔰 *HACK COMMANDS:*
+• *.menu* - Command terminal
+• *.tutorial* - Code academy
+• *.video [url]* - Data extraction
+• *.games* - Simulation mode
+• *.status* - System monitor
 
-🌟 Your journey begins now, @${participantName}! 🌟
-🎭✨🎪✨🎨✨🎬✨🎵✨🎯✨🎮✨🎊`,
+${profilePicUrl ? `🎯 Target Profile: ${profilePicUrl}` : '🎯 Profile: Encrypted'}
 
-                `💫▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬💫
-🚀      SPACE MISSION: NEW MEMBER!     🚀
-💫▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬💫
+🟢 You're in the system now, @${participantName}! 🟢
+💚🔰🕳️🌐🔢🔐🤖🎯🟢`,
 
-🛸 *Mission Control to @${participantName}*
-🌟 Welcome aboard starship: *${groupName}*!
+                `🔴━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🔴
+⚠️     SECURITY BREACH WARNING!     ⚠️
+🔴━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🔴
 
-📡 *Mission Briefing:*
+🚨 *INTRUDER ALERT:* @${participantName}
+💥 *UNAUTHORIZED ACCESS TO:* ${groupName}
+
+⚠️ *THREAT ASSESSMENT:*
 ${groupDescription}
 
-🌍 *Crew Manifest:*
-👨‍🚀 Active Astronauts: ${memberCount}
-👩‍✈️ Mission Commanders: ${adminCount}
-🤖 AI Co-Pilot: Fully Operational
+🚩 *SECURITY METRICS:*
+👥 Compromised Accounts: ${memberCount}
+🔒 Security Clearance: ${adminCount}
+🤖 Defense Bot: ENGAGED
 
-🛰️ *Advanced Technology Suite:*
-🎥 Quantum Media Processing Engine
-🎵 Sonic Wave Audio Extractor
-🛡️ Plasma Shield Spam Deflector
-🎓 Neural Network Learning System
-🎮 Holographic Entertainment Portal
-📊 Warp Drive Status Monitor
-👥 Galactic Communication Hub
+💥 *PENETRATION TOOLS:*
+🎵 Sonic Data Breach
+📹 Visual Reconnaissance
+🛡️ Counter-Attack Systems
+📚 Intel Gathering Hub
+🎮 Stealth Operations
+⚡ Live Threat Monitor
 
-⚡ *Command Bridge Access:*
-• *.menu* - Main navigation console
-• *.status* - Ship diagnostics
-• *.tutorial* - Training simulation
-• *.video [coordinates]* - Media teleporter
-• *.games [genre]* - Entertainment deck
+🚨 *RED TEAM COMMANDS:*
+• *.menu* - Mission briefing
+• *.tutorial* - Training protocols
+• *.video [target]* - Intelligence extraction
+• *.games* - War games
+• *.status* - Threat level
 
-🚀 Prepare for an amazing adventure, @${participantName}! 🚀
-💫🛸🌟🛰️⚡🎮🎵🎥🛡️🎓📊👥💫`,
+${profilePicUrl ? `🎯 Subject Profile: ${profilePicUrl}` : '🎯 Profile: Classified'}
 
-                `🏛️╔═══════════════════════════════╗🏛️
-👑     ROYAL COURT ANNOUNCEMENT!     👑
-🏛️╚═══════════════════════════════╝🏛️
+🔴 The breach is complete, @${participantName}! 🔴
+⚠️💥🚨🚩🔒🤖💥🎯🔴`,
 
-🎺 *By Royal Decree...*
-🌟 We hereby welcome Sir/Lady @${participantName}
-🏰 To the noble realm: *${groupName}*
+                `⚫━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━⚫
+👤      ANONYMOUS ACCESS GRANTED     👤
+⚫━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━⚫
 
-📜 *Royal Charter:*
+🎭 *GHOST IN THE MACHINE:* @${participantName}
+💀 *DARK WEB PORTAL:* ${groupName}
+
+🕴️ *CLASSIFIED INTEL:*
 ${groupDescription}
 
-👑 *Court Registry:*
-🏰 Noble Citizens: ${memberCount}
-⚔️ Royal Guards (Admins): ${adminCount}
-🤖 Court Wizard (Bot): At Your Service
+👤 *SHADOW NETWORK:*
+👥 Anonymous Users: ${memberCount}
+🔐 Deep State Admins: ${adminCount}
+🤖 Ghost Protocol: ACTIVE
 
-🎭 *Royal Bot Services:*
-🎬 Imperial Media Conjuring
-🎵 Bardic Audio Enchantments
-🛡️ Dragon-Proof Spam Barriers
-📚 Scholarly Wisdom Scrolls
-🎮 Gaming Crystal Ball Predictions
-📊 Royal Observatory Monitoring
-👥 Court Herald Communications
+🔮 *DARK TOOLS:*
+🎵 Audio Cryptanalysis
+📹 Video Forensics
+🛡️ Steganography Shield
+📚 Darknet Archives
+🎮 Psychological Ops
+⚡ Zero-Day Monitor
 
-👑 *Noble Commands:*
-• *.menu* - Royal decree scrolls
-• *.tutorial* - Court wizard teachings
-• *.video [scroll]* - Media summoning spell
-• *.games [quest]* - Adventure prophecies
-• *.alive* - Wizard vitality check
+👤 *SHADOW COMMANDS:*
+• *.menu* - Anonymous interface
+• *.tutorial* - Underground guides
+• *.video [cipher]* - Decrypt media
+• *.games* - Mind games
+• *.status* - Ghost status
 
-🌟 Long may you prosper, @${participantName}! 🌟
-🏛️👑🎺🌟🏰📜⚔️🤖🎭🎬🎵🛡️📚🎮👑`
+${profilePicUrl ? `🎭 Identity Revealed: ${profilePicUrl}` : '🎭 Profile: Anonymous'}
+
+⚫ You are now invisible, @${participantName}! ⚫
+👤💀🎭🕴️🔮👤💀🎭⚫`
             ];
 
-            // Select random welcome message
-            const randomWelcome = welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+            // Select random hacker welcome message
+            const randomHackerWelcome = hackerWelcomeMessages[Math.floor(Math.random() * hackerWelcomeMessages.length)];
 
-            // Send the enhanced welcome message
-            await this.sock.sendMessage(groupId, {
-                text: randomWelcome,
+            // Send the hacker-styled welcome message with profile picture
+            const welcomeOptions = {
+                text: randomHackerWelcome,
                 mentions: [participantId]
-            });
+            };
 
-            // Send a follow-up professional tip after 3 seconds
+            // Add profile picture if available
+            if (profilePicUrl) {
+                try {
+                    await this.sock.sendMessage(groupId, {
+                        image: { url: profilePicUrl },
+                        caption: randomHackerWelcome,
+                        mentions: [participantId]
+                    });
+                } catch (error) {
+                    // If profile picture fails, send text only
+                    await this.sock.sendMessage(groupId, welcomeOptions);
+                }
+            } else {
+                await this.sock.sendMessage(groupId, welcomeOptions);
+            }
+
+            // Send a follow-up hacker tip after 3 seconds
             setTimeout(async () => {
-                const followUpTip = `💡 *Pro Tip for @${participantName}:*
+                const hackerTip = `💀 *HACKER BRIEFING for @${participantName}:*
 
-🎯 *Quick Start Guide:*
-1️⃣ Type *.menu* to see all features
-2️⃣ Try *.tutorial* for interactive learning
-3️⃣ Use *.video [any URL]* for instant downloads
-4️⃣ Explore *.games* for personalized recommendations
+🔥 *INITIATION PROTOCOL:*
+1️⃣ Execute *.menu* to access mainframe
+2️⃣ Run *.tutorial* for advanced training
+3️⃣ Deploy *.video [target]* for data extraction
+4️⃣ Launch *.games* for stealth missions
 
-🌟 *Group-Specific Features:*
-• Advanced spam protection is active
-• Real-time status monitoring enabled
-• Multi-language support available
-• Professional-grade media processing ready
+⚡ *SYSTEM CAPABILITIES:*
+• Quantum encryption active
+• Neural firewall deployed
+• Multi-layer protection online
+• Elite-grade processing ready
 
-Welcome to the premium experience! 🚀`;
+🖥️ Welcome to the dark side, agent! 💀`;
 
                 await this.sock.sendMessage(groupId, {
-                    text: followUpTip,
+                    text: hackerTip,
                     mentions: [participantId]
                 });
             }, 3000);
 
-            logger.info(`Enhanced welcome message sent to ${participantName} in ${groupMetadata.subject}`);
+            logger.info(`Hacker-styled welcome message with profile picture sent to ${participantName} in ${groupMetadata.subject}`);
 
         } catch (error) {
             logger.error(`Error sending welcome message: ${error.message}`);
