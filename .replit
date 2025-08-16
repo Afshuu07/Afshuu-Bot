@@ -21,12 +21,12 @@ args = "Bailey Bot"
 name = "Bailey Bot"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "console"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "node bot-bailey.js"
-
-[workflows.workflow.metadata]
-outputType = "console"
 
 [agent]
 expertMode = true
