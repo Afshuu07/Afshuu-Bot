@@ -214,11 +214,12 @@ class AfshuuBaileyBot {
                 return;
             }
 
-            // Check spam (skip for command messages)
+            // Check spam (skip for command messages and self messages)
             const isCommandMessage = messageContent.startsWith(config.PREFIX || '.');
-            console.log(`🛡️ Command message detected: ${isCommandMessage}`);
+            const isSelfMessage = message.key.fromMe;
+            console.log(`🛡️ Command message detected: ${isCommandMessage}, Self message: ${isSelfMessage}`);
             
-            if (!isCommandMessage) {
+            if (!isCommandMessage && !isSelfMessage) {
                 const isSpam = await spamDetector.checkMessage(messageContent, message.key.remoteJid);
                 console.log(`🔍 Spam check result: ${JSON.stringify(isSpam)}`);
                 if (isSpam.isSpam) {
@@ -227,7 +228,7 @@ class AfshuuBaileyBot {
                     return;
                 }
             } else {
-                console.log('⏩ Skipping spam check for command message');
+                console.log(`⏩ Skipping spam check - Command: ${isCommandMessage}, Self: ${isSelfMessage}`);
             }
 
             // Create context object similar to whatsapp-web.js format
