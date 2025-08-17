@@ -1,7 +1,9 @@
 const logger = require('../utils/logger');
 const spamDetector = require('../utils/spamDetector');
 const config = require('../config/settings');
-const videoDownloader = require('../utils/videoDownloader');
+const enhancedVideoDownloader = require('../utils/enhancedVideoDownloader');
+const enhancedAudioDownloader = require('../utils/enhancedAudioDownloader');
+const enhancedStickerMaker = require('../utils/enhancedStickerMaker');
 const connectionStatusVisualizer = require('../utils/connectionStatusVisualizer');
 
 // Require modules for media handling
@@ -665,84 +667,47 @@ Power Level: Maximum overload
                     return;
                 }
 
-                // Use yt-dlp for audio download with better options
-                const { exec } = require('child_process');
-                const fileName = `audio_${Date.now()}`;
-                const tempDir = './temp';
-                
-                // Ensure temp directory exists
-                if (!fs.existsSync(tempDir)) {
-                    fs.mkdirSync(tempDir, { recursive: true });
+                // Use enhanced audio downloader
+                try {
+                    const audioResult = await enhancedAudioDownloader.downloadHighQualityAudio(url);
+                    
+                    const fileBuffer = fs.readFileSync(audioResult.path);
+                    
+                    // For Bailey bot, send audio
+                    if (typeof client.sendMessage === 'function') {
+                        await client.sendMessage(message.key.remoteJid, {
+                            audio: fileBuffer,
+                            caption: `🎵 *Audio Downloaded Successfully!* 🎵\n\n✅ High quality from ${audioResult.platform}\n📱 Ready to enjoy!\n🚀 Downloaded via Afshuu Bot`,
+                            mimetype: 'audio/mp3'
+                        });
+                    } else {
+                        // For whatsapp-web.js compatibility
+                        const { MessageMedia } = require('whatsapp-web.js');
+                        const media = MessageMedia.fromFilePath(audioResult.path);
+                        await message.reply(media);
+                    }
+                    
+                    // Clean up file
+                    fs.unlinkSync(audioResult.path);
+                    logger.info(`Enhanced audio downloaded successfully: ${url}`);
+                    
+                } catch (downloadError) {
+                    logger.error(`Enhanced download error: ${downloadError.message}`);
+                    
+                    let errorMessage = '❌ *Download Failed* ❌\n\n';
+                    
+                    if (downloadError.message === 'DRM_PROTECTED') {
+                        errorMessage += '🚫 This content is DRM protected and cannot be downloaded.\n\n💡 Try YouTube or other free platforms instead!';
+                    } else if (downloadError.message.includes('private') || downloadError.message.includes('unavailable')) {
+                        errorMessage += '🔒 This content is private or unavailable.\n\n💡 Make sure the link is public and accessible!';
+                    } else if (downloadError.message.includes('not supported')) {
+                        errorMessage += '❌ This platform is not supported yet.\n\n🌟 Try: YouTube, TikTok, Instagram, Twitter, or SoundCloud!';
+                    } else {
+                        errorMessage += '🚨 Could not download from this link.\n\n💡 *Try:*\n• Check if link is valid\n• Use YouTube/TikTok instead\n• Make sure content is public';
+                    }
+                    
+                    await message.reply(errorMessage);
                 }
-                
-                const outputPath = `${tempDir}/${fileName}`;
-                const command = `yt-dlp -x --audio-format mp3 --audio-quality 0 --no-warnings --no-playlist -o "${outputPath}.%(ext)s" "${url}"`;
-                
-                exec(command, { timeout: 120000 }, async (error, stdout, stderr) => {
-                    if (error) {
-                        logger.error(`Download error: ${error.message}`);
-                        
-                        let errorMessage = '❌ *Download Failed* ❌\n\n';
-                        
-                        if (error.message.includes('DRM')) {
-                            errorMessage += '🚫 This content is DRM protected and cannot be downloaded.\n\n💡 Try YouTube or other free platforms instead!';
-                        } else if (error.message.includes('private') || error.message.includes('unavailable')) {
-                            errorMessage += '🔒 This content is private or unavailable.\n\n💡 Make sure the link is public and accessible!';
-                        } else if (error.message.includes('not supported')) {
-                            errorMessage += '❌ This platform is not supported yet.\n\n🌟 Try: YouTube, TikTok, Instagram, Twitter, or SoundCloud!';
-                        } else {
-                            errorMessage += '🚨 Could not download from this link.\n\n💡 *Try:*\n• Check if link is valid\n• Use YouTube/TikTok instead\n• Make sure content is public';
-                        }
-                        
-                        await message.reply(errorMessage);
-                        return;
-                    }
-
-                    // Check if file exists and send it
-                    const possibleFiles = [`${outputPath}.mp3`, `${outputPath}.m4a`, `${outputPath}.webm`, `${outputPath}.ogg`];
-                    
-                    for (const file of possibleFiles) {
-                        if (fs.existsSync(file)) {
-                            try {
-                                const fileBuffer = fs.readFileSync(file);
-                                const fileSize = fileBuffer.length;
-                                
-                                // Check file size (WhatsApp limit ~16MB)
-                                if (fileSize > 16 * 1024 * 1024) {
-                                    await message.reply(`⚠️ *File Too Large* ⚠️\n\nThe audio file is ${(fileSize / (1024 * 1024)).toFixed(1)}MB\nWhatsApp limit is 16MB\n\n💡 Try a shorter video or use *.video* for compression`);
-                                    fs.unlinkSync(file);
-                                    return;
-                                }
-                                
-                                // For Bailey bot, send audio
-                                if (typeof client.sendMessage === 'function') {
-                                    await client.sendMessage(message.key.remoteJid, {
-                                        audio: fileBuffer,
-                                        caption: `🎵 *Audio Downloaded Successfully!* 🎵\n\n✅ High quality MP3\n📱 Ready to enjoy!\n🚀 Downloaded via Afshuu Bot`,
-                                        mimetype: 'audio/mp3'
-                                    });
-                                } else {
-                                    // For whatsapp-web.js compatibility
-                                    const { MessageMedia } = require('whatsapp-web.js');
-                                    const media = MessageMedia.fromFilePath(file);
-                                    await message.reply(media);
-                                }
-                                
-                                // Clean up file
-                                fs.unlinkSync(file);
-                                logger.info(`Audio downloaded successfully: ${url}`);
-                                return;
-                            } catch (sendError) {
-                                logger.error(`Error sending audio: ${sendError.message}`);
-                                if (fs.existsSync(file)) {
-                                    fs.unlinkSync(file);
-                                }
-                            }
-                        }
-                    }
-                    
-                    await message.reply(`❌ *File Processing Error* ❌\n\n🔄 Download completed but no audio file found\n💡 The link might not contain audio content`);
-                });
                 
             } catch (error) {
                 logger.error(`Download command error: ${error.message}`);
@@ -1016,47 +981,146 @@ Try YouTube or TikTok links instead!`);
 
 
     sticker: {
-        description: 'Convert images to stickers',
-        usage: '.sticker (reply to image)',
+        description: 'Convert images, GIFs, and videos to stickers',
+        usage: '.sticker (reply to media)',
         ownerOnly: false,
         groupOnly: false,
         async execute(client, message, args, context) {
-            if (!message.hasQuotedMsg) {
-                await message.reply(`🎨 *Sticker Maker* 🎨
-
-🎯 *Usage:* Reply to an image with *.sticker*
-
-📝 *Instructions:*
-1. Send or find an image
-2. Reply to it with *.sticker*
-3. Get your custom sticker!
-
-🌟 *Supported formats:* JPG, PNG, GIF
-💡 *Pro Tip:* Square images work best!`);
-                return;
-            }
-
-            const quotedMsg = await message.getQuotedMessage();
-            
-            if (!quotedMsg.hasMedia) {
-                await message.reply('❌ Please reply to an image to create a sticker!');
-                return;
-            }
-
-            await message.reply('🎨 Creating your sticker... ⏳');
+            // Check if it's a Bailey message with quoted media
+            let hasMedia = false;
+            let mediaType = null;
+            let quotedMessage = null;
 
             try {
-                const media = await quotedMsg.downloadMedia();
-                
-                if (media.mimetype.includes('image')) {
-                    await message.reply(media, null, { sendMediaAsSticker: true });
-                    logger.info('Sticker created successfully');
-                } else {
-                    await message.reply('❌ Only images can be converted to stickers!');
+                if (message.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
+                    quotedMessage = message.message.extendedTextMessage.contextInfo.quotedMessage;
+                    if (quotedMessage.imageMessage || quotedMessage.videoMessage || quotedMessage.documentMessage) {
+                        hasMedia = true;
+                        mediaType = quotedMessage.imageMessage ? 'image' : 
+                                   quotedMessage.videoMessage ? 'video' : 'document';
+                    }
+                } else if (message.hasQuotedMsg) {
+                    // whatsapp-web.js style
+                    const quotedMsg = await message.getQuotedMessage();
+                    hasMedia = quotedMsg.hasMedia;
+                    mediaType = quotedMsg.type;
                 }
             } catch (error) {
-                logger.error(`Sticker creation error: ${error.message}`);
-                await message.reply('❌ Failed to create sticker. Please try again with a different image.');
+                // Handle error silently
+            }
+
+            if (!hasMedia) {
+                await message.reply(`🎨 *ENHANCED STICKER MAKER* 🎨
+
+🎯 *Usage:* Reply to any media with *.sticker*
+
+📝 *Supported Media:*
+🖼️ Images (JPG, PNG, WEBP, BMP, TIFF)
+🎞️ GIFs (Animated stickers)
+📹 Videos (Converted to animated stickers)
+📄 All image formats
+
+🌟 *Features:*
+✅ Auto-resize to 512x512
+✅ Smart compression for WhatsApp
+✅ Maintains aspect ratio
+✅ Animated support for GIFs/videos
+✅ Professional quality output
+
+💡 *Pro Tips:*
+• Square images work best
+• Videos will be trimmed to 3 seconds
+• GIFs become animated stickers`);
+                return;
+            }
+
+            await message.reply('🎨 *Creating Enhanced Sticker...* 🎨\n\n⚡ Processing media...\n🔄 Optimizing for WhatsApp...\n⏳ This may take a moment...');
+
+            try {
+                let mediaBuffer = null;
+                let fileName = null;
+                let mimeType = null;
+
+                // Download media based on message type
+                if (quotedMessage && typeof client.downloadMediaMessage === 'function') {
+                    // Bailey bot
+                    const stream = await client.downloadMediaMessage(message, 'buffer');
+                    mediaBuffer = stream;
+                    fileName = `temp_${Date.now()}.${mediaType === 'image' ? 'jpg' : mediaType === 'video' ? 'mp4' : 'bin'}`;
+                    mimeType = quotedMessage.imageMessage?.mimetype || quotedMessage.videoMessage?.mimetype || 'application/octet-stream';
+                } else if (message.hasQuotedMsg) {
+                    // whatsapp-web.js
+                    const quotedMsg = await message.getQuotedMessage();
+                    const media = await quotedMsg.downloadMedia();
+                    mediaBuffer = Buffer.from(media.data, 'base64');
+                    fileName = `temp_${Date.now()}.${media.mimetype.split('/')[1]}`;
+                    mimeType = media.mimetype;
+                }
+
+                if (!mediaBuffer) {
+                    await message.reply('❌ Failed to download media. Please try again.');
+                    return;
+                }
+
+                // Save temp file
+                const tempPath = path.join('./temp', fileName);
+                if (!fs.existsSync('./temp')) {
+                    fs.mkdirSync('./temp', { recursive: true });
+                }
+                fs.writeFileSync(tempPath, mediaBuffer);
+
+                // Create sticker using enhanced sticker maker
+                const stickerResult = await enhancedStickerMaker.createStickerFromAny(tempPath);
+                
+                if (stickerResult.success) {
+                    const stickerBuffer = fs.readFileSync(stickerResult.filepath);
+                    
+                    // Send sticker
+                    if (typeof client.sendMessage === 'function') {
+                        // Bailey bot
+                        await client.sendMessage(message.key.remoteJid, {
+                            sticker: stickerBuffer
+                        });
+                    } else {
+                        // whatsapp-web.js
+                        const { MessageMedia } = require('whatsapp-web.js');
+                        const stickerMedia = new MessageMedia('image/webp', stickerBuffer.toString('base64'));
+                        await message.reply(stickerMedia, null, { sendMediaAsSticker: true });
+                    }
+                    
+                    // Success message
+                    await message.reply(`✅ *Sticker Created Successfully!* ✅
+
+🎨 Type: ${stickerResult.type}
+📏 Size: ${stickerResult.dimensions}
+💾 File Size: ${(stickerResult.size / 1024).toFixed(1)}KB
+🌟 Quality: Professional
+
+🚀 Your enhanced sticker is ready to use!`);
+                    
+                    // Cleanup
+                    fs.unlinkSync(tempPath);
+                    await enhancedStickerMaker.cleanup(stickerResult.filepath);
+                    
+                    logger.info(`Enhanced sticker created: ${stickerResult.type}`);
+                } else {
+                    await message.reply('❌ Failed to create sticker. The media format might not be supported.');
+                    fs.unlinkSync(tempPath);
+                }
+                
+            } catch (error) {
+                logger.error(`Enhanced sticker creation error: ${error.message}`);
+                await message.reply(`❌ *Sticker Creation Failed* ❌
+
+🚨 Error: ${error.message}
+
+💡 *Try:*
+• Different image/video format
+• Smaller file size
+• Make sure media is not corrupted
+• Use JPG, PNG, GIF, or MP4 formats
+
+🔄 Please try again with different media.`);
             }
         }
     },
@@ -1331,7 +1395,7 @@ This may take a few minutes for large videos.`);
 
             try {
                 // Get video info first
-                const videoInfo = await videoDownloader.getVideoInfo(url);
+                const videoInfo = await enhancedVideoDownloader.getVideoInfo(url);
                 
                 await message.reply(`📹 *Video Information* 📹
 
@@ -1339,82 +1403,51 @@ This may take a few minutes for large videos.`);
 👤 *Uploader:* ${videoInfo.uploader}
 ⏱️ *Duration:* ${Math.floor(videoInfo.duration / 60)}:${String(videoInfo.duration % 60).padStart(2, '0')}
 👁️ *Views:* ${videoInfo.view_count?.toLocaleString() || 'N/A'}
+🌐 *Platform:* ${videoInfo.platform}
 
-🔄 *Now downloading and processing...*`);
+🔄 *Now downloading without watermarks...*`);
 
-                // Use yt-dlp directly for better compatibility with Bailey
-                const { exec } = require('child_process');
-                const tempDir = './temp';
-                const fileName = `video_${Date.now()}`;
-                
-                // Ensure temp directory exists
-                if (!fs.existsSync(tempDir)) {
-                    fs.mkdirSync(tempDir, { recursive: true });
-                }
-                
-                const outputPath = `${tempDir}/${fileName}.%(ext)s`;
-                const command = `yt-dlp --format "best[height<=720]/best" --output "${outputPath}" --no-warnings --no-playlist "${url}"`;
-                
-                exec(command, { timeout: 180000 }, async (error, stdout, stderr) => {
-                    if (error) {
-                        logger.error(`Video download error: ${error.message}`);
-                        await message.reply(`❌ *Video Download Failed* ❌\n\n🚨 ${error.message.includes('DRM') ? 'DRM protected content' : 'Could not download video'}\n\n💡 Try YouTube, TikTok, or Instagram instead!`);
-                        return;
-                    }
+                // Use enhanced video downloader
+                try {
+                    const videoResult = await enhancedVideoDownloader.downloadVideoWithoutWatermark(url);
                     
-                    // Find downloaded file
-                    const files = fs.readdirSync(tempDir).filter(file => file.startsWith(`video_${fileName.split('_')[1]}`) && (file.endsWith('.mp4') || file.endsWith('.mkv') || file.endsWith('.webm')));
+                    const videoBuffer = fs.readFileSync(videoResult.path);
                     
-                    if (files.length > 0) {
-                        const videoFile = path.join(tempDir, files[0]);
-                        const fileSize = fs.statSync(videoFile).size;
-                        
-                        if (fileSize > 16 * 1024 * 1024) {
-                            await message.reply(`⚠️ *Video Too Large* ⚠️\n\nFile: ${(fileSize / (1024 * 1024)).toFixed(1)}MB\nWhatsApp limit: 16MB\n\n🔄 *Auto-compressing...*`);
-                            
-                            // Compress video using ffmpeg
-                            const compressedPath = videoFile.replace(/\.[^/.]+$/, '_compressed.mp4');
-                            const compressCommand = `ffmpeg -i "${videoFile}" -c:v libx264 -crf 28 -preset fast -c:a aac -b:a 128k -movflags +faststart -y "${compressedPath}"`;
-                            
-                            exec(compressCommand, async (compressError) => {
-                                if (!compressError && fs.existsSync(compressedPath)) {
-                                    const compressedBuffer = fs.readFileSync(compressedPath);
-                                    
-                                    if (typeof client.sendMessage === 'function') {
-                                        await client.sendMessage(message.key.remoteJid, {
-                                            video: compressedBuffer,
-                                            caption: `📹 *${videoInfo.title}*\n\n✅ HD Quality (Compressed)\n🚀 No Watermarks\n📱 Optimized for WhatsApp\n\n💎 Powered by Afshuu Bot`,
-                                            mimetype: 'video/mp4'
-                                        });
-                                    }
-                                    
-                                    // Cleanup
-                                    fs.unlinkSync(videoFile);
-                                    fs.unlinkSync(compressedPath);
-                                } else {
-                                    await message.reply(`❌ Compression failed. Video too large for WhatsApp.`);
-                                    fs.unlinkSync(videoFile);
-                                }
-                            });
-                        } else {
-                            // File is small enough, send directly
-                            const videoBuffer = fs.readFileSync(videoFile);
-                            
-                            if (typeof client.sendMessage === 'function') {
-                                await client.sendMessage(message.key.remoteJid, {
-                                    video: videoBuffer,
-                                    caption: `📹 *${videoInfo.title}*\n\n✅ HD Quality\n🚀 No Watermarks\n📱 Ready to watch!\n\n💎 Powered by Afshuu Bot`,
-                                    mimetype: 'video/mp4'
-                                });
-                            }
-                            
-                            // Cleanup
-                            fs.unlinkSync(videoFile);
-                        }
+                    // For Bailey bot, send video
+                    if (typeof client.sendMessage === 'function') {
+                        await client.sendMessage(message.key.remoteJid, {
+                            video: videoBuffer,
+                            caption: `📹 *${videoInfo.title}* 📹\n\n✅ ${videoResult.compressed ? 'HD Compressed' : 'Original HD'} quality\n🌐 Platform: ${videoResult.platform}\n📱 Ready to watch!\n🚀 ${videoResult.watermarkFree ? 'No watermarks' : 'Clean video'}\n💾 Size: ${(videoResult.size / (1024 * 1024)).toFixed(1)}MB\n\n💎 Powered by Afshuu Bot`,
+                            mimetype: 'video/mp4'
+                        });
                     } else {
-                        await message.reply(`❌ *Download Failed*\n\nNo video file was created.\nTry a different link or platform.`);
+                        // For whatsapp-web.js compatibility
+                        const { MessageMedia } = require('whatsapp-web.js');
+                        const media = MessageMedia.fromFilePath(videoResult.path);
+                        await message.reply(media);
                     }
-                });
+                    
+                    // Clean up file
+                    fs.unlinkSync(videoResult.path);
+                    logger.info(`Enhanced video downloaded successfully: ${url}`);
+                    
+                } catch (downloadError) {
+                    logger.error(`Enhanced video download error: ${downloadError.message}`);
+                    
+                    let errorMessage = '❌ *Video Download Failed* ❌\n\n';
+                    
+                    if (downloadError.message.includes('not available') || downloadError.message.includes('private')) {
+                        errorMessage += '🔒 This video is private or unavailable.\n\n💡 Make sure the video is public and accessible!';
+                    } else if (downloadError.message.includes('not supported')) {
+                        errorMessage += '❌ This platform is not supported yet.\n\n🌟 Try: YouTube, TikTok, Instagram, or Twitter!';
+                    } else if (downloadError.message.includes('timeout')) {
+                        errorMessage += '⏰ Download timeout - video might be too large.\n\n💡 Try shorter videos or check your connection!';
+                    } else {
+                        errorMessage += '🚨 Could not download this video.\n\n💡 *Try:*\n• Use a different platform\n• Check if link is valid\n• Use audio download with *.download* instead';
+                    }
+                    
+                    await message.reply(errorMessage);
+                }
                 
                 logger.info(`Video download process completed for: ${url}`);
             } catch (error) {
@@ -1790,243 +1823,7 @@ ${participants.map((participant, index) => `${index + 1}. @${participant.id.user
         }
     },
 
-    phonelookup: {
-        description: 'Identify and analyze phone numbers (anti-detect)',
-        usage: '.phonelookup [number]',
-        ownerOnly: false,
-        groupOnly: false,
-        async execute(client, message, args, context) {
-            if (!args[0]) {
-                await message.reply(`📱 *PHONE NUMBER ANALYZER* 📱
 
-💀 *Advanced Phone Intelligence System* 💀
-
-🎯 *Usage:* \`.phonelookup [number]\`
-
-🔥 *Features:*
-• 🌍 Country & region detection
-• 📞 Carrier identification
-• 🕰️ Timezone analysis
-• 📊 Number type detection
-• 🛡️ Security risk assessment
-• 👤 Anti-detection analysis
-
-📝 *Examples:*
-• \`.phonelookup +1234567890\`
-• \`.phonelookup 918789630986\`
-• \`.phonelookup +44 20 7946 0958\`
-
-⚡ *Professional phone intelligence at your fingertips!*`);
-                return;
-            }
-
-            const phoneNumber = args.join('').replace(/\s/g, ''); // Remove spaces
-            
-            await message.reply(`🔍 *ANALYZING PHONE NUMBER...* 🔍
-
-📱 *Target:* ${phoneNumber}
-🔄 *Status:* Scanning databases...
-⚡ *AI Analysis:* In progress...
-
-⏳ *Please wait while we gather intelligence...*`);
-
-            try {
-                const analysis = await this.analyzePhoneNumber(phoneNumber);
-                
-                const report = `💀━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━💀
-🔥      PHONE INTELLIGENCE REPORT      🔥
-💀━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━💀
-
-🎯 *TARGET:* ${phoneNumber}
-
-🌍 *LOCATION INTELLIGENCE:*
-• Country: ${analysis.country}
-• Region: ${analysis.region}
-• City: ${analysis.city}
-• Timezone: ${analysis.timezone}
-• Country Code: ${analysis.countryCode}
-
-📞 *CARRIER ANALYSIS:*
-• Network: ${analysis.carrier}
-• Type: ${analysis.lineType}
-• Status: ${analysis.status}
-• Ported: ${analysis.ported ? '✅ Yes' : '❌ No'}
-
-🛡️ *SECURITY ASSESSMENT:*
-• Risk Level: ${analysis.riskLevel}
-• Spam Score: ${analysis.spamScore}/100
-• Valid Format: ${analysis.isValid ? '✅ Valid' : '❌ Invalid'}
-• Active Status: ${analysis.isActive ? '🟢 Active' : '🔴 Inactive'}
-
-👤 *ANTI-DETECTION ANALYSIS:*
-• Detection Risk: ${analysis.detectionRisk}
-• Privacy Score: ${analysis.privacyScore}/100
-• OSINT Exposure: ${analysis.osintExposure}
-• Social Media Links: ${analysis.socialLinks}
-
-📊 *THREAT INTELLIGENCE:*
-• Blacklist Status: ${analysis.blacklisted ? '✅ Listed' : '❌ Clean'}
-• Fraud Reports: ${analysis.fraudReports}
-• Scam Probability: ${analysis.scamProbability}%
-• Trust Score: ${analysis.trustScore}/100
-
-🕰️ *TIMING ANALYSIS:*
-• Best Contact Time: ${analysis.contactTime}
-• Local Time: ${analysis.localTime}
-• Business Hours: ${analysis.businessHours}
-
-💀 *INTELLIGENCE SUMMARY:*
-${analysis.summary}
-
-⚡ *Report generated by Afshuu Intelligence* ⚡
-💀━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━💀`;
-
-                await message.reply(report);
-                logger.info(`Phone lookup executed for: ${phoneNumber}`);
-                
-            } catch (error) {
-                logger.error(`Phone lookup error: ${error.message}`);
-                await message.reply(`❌ *PHONE ANALYSIS FAILED* ❌
-
-🚨 *Error:* ${error.message}
-
-💡 *Troubleshooting:*
-• Check phone number format
-• Include country code (+1, +44, etc.)
-• Remove special characters
-• Try international format
-
-🔄 *Example:* \`.phonelookup +1234567890\``);
-            }
-        },
-
-        async analyzePhoneNumber(phoneNumber) {
-            // Remove all non-digit characters except +
-            const cleanNumber = phoneNumber.replace(/[^\d+]/g, '');
-            
-            // Basic phone number parsing
-            const analysis = {
-                country: 'Unknown',
-                region: 'Unknown', 
-                city: 'Unknown',
-                timezone: 'Unknown',
-                countryCode: 'Unknown',
-                carrier: 'Unknown',
-                lineType: 'Unknown',
-                status: 'Unknown',
-                ported: false,
-                riskLevel: 'Low',
-                spamScore: Math.floor(Math.random() * 30) + 10, // Random low score
-                isValid: this.isValidPhoneNumber(cleanNumber),
-                isActive: true,
-                detectionRisk: 'Low',
-                privacyScore: Math.floor(Math.random() * 20) + 70, // Random high score
-                osintExposure: 'Minimal',
-                socialLinks: 'Not found',
-                blacklisted: false,
-                fraudReports: '0',
-                scamProbability: Math.floor(Math.random() * 15), // Random low score
-                trustScore: Math.floor(Math.random() * 25) + 70, // Random high score
-                contactTime: 'Business hours recommended',
-                localTime: new Date().toLocaleTimeString(),
-                businessHours: '9 AM - 6 PM local time',
-                summary: 'Analysis complete - number appears legitimate with low risk factors.'
-            };
-
-            // Enhanced analysis based on country code
-            if (cleanNumber.startsWith('+1') || (cleanNumber.length === 10 && !cleanNumber.startsWith('+'))) {
-                analysis.country = 'United States';
-                analysis.region = 'North America';
-                analysis.timezone = 'Multiple (EST/CST/MST/PST)';
-                analysis.countryCode = '+1';
-                analysis.carrier = this.getRandomCarrier(['Verizon', 'AT&T', 'T-Mobile', 'Sprint']);
-            } else if (cleanNumber.startsWith('+44')) {
-                analysis.country = 'United Kingdom';
-                analysis.region = 'Europe';
-                analysis.timezone = 'GMT/BST';
-                analysis.countryCode = '+44';
-                analysis.carrier = this.getRandomCarrier(['EE', 'Vodafone', 'O2', 'Three']);
-            } else if (cleanNumber.startsWith('+91')) {
-                analysis.country = 'India';
-                analysis.region = 'Asia';
-                analysis.timezone = 'IST (UTC+5:30)';
-                analysis.countryCode = '+91';
-                // Better carrier distribution for Indian numbers
-                const indianCarriers = ['Jio', 'Airtel', 'Vi (Vodafone Idea)', 'BSNL', 'MTNL', 'Aircel'];
-                const carrierWeights = [35, 30, 20, 10, 3, 2]; // Jio and Airtel are most common
-                analysis.carrier = this.getWeightedRandomCarrier(indianCarriers, carrierWeights);
-                analysis.city = this.getRandomCity(['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow']);
-            } else if (cleanNumber.startsWith('+49')) {
-                analysis.country = 'Germany';
-                analysis.region = 'Europe';
-                analysis.timezone = 'CET (UTC+1)';
-                analysis.countryCode = '+49';
-                analysis.carrier = this.getRandomCarrier(['Deutsche Telekom', 'Vodafone', 'O2', 'E-Plus']);
-            } else if (cleanNumber.startsWith('+33')) {
-                analysis.country = 'France';
-                analysis.region = 'Europe';
-                analysis.timezone = 'CET (UTC+1)';
-                analysis.countryCode = '+33';
-                analysis.carrier = this.getRandomCarrier(['Orange', 'SFR', 'Bouygues', 'Free']);
-            } else if (cleanNumber.startsWith('+86')) {
-                analysis.country = 'China';
-                analysis.region = 'Asia';
-                analysis.timezone = 'CST (UTC+8)';
-                analysis.countryCode = '+86';
-                analysis.carrier = this.getRandomCarrier(['China Mobile', 'China Unicom', 'China Telecom']);
-            } else if (cleanNumber.startsWith('+7')) {
-                analysis.country = 'Russia';
-                analysis.region = 'Europe/Asia';
-                analysis.timezone = 'Multiple (UTC+2 to UTC+12)';
-                analysis.countryCode = '+7';
-                analysis.carrier = this.getRandomCarrier(['MTS', 'Beeline', 'MegaFon', 'Tele2']);
-            }
-
-            // Set line type based on number pattern
-            analysis.lineType = this.detectLineType(cleanNumber);
-            analysis.status = analysis.isValid ? 'Valid' : 'Invalid';
-            
-            return analysis;
-        },
-
-        isValidPhoneNumber(number) {
-            // Basic validation - check if it's a reasonable phone number
-            const digits = number.replace(/[^\d]/g, '');
-            return digits.length >= 7 && digits.length <= 15;
-        },
-
-        detectLineType(number) {
-            const types = ['Mobile', 'Landline', 'VoIP', 'Toll-free'];
-            return types[Math.floor(Math.random() * types.length)];
-        },
-
-        getRandomCarrier(carriers) {
-            // Ensure we always get a random carrier
-            const randomIndex = Math.floor(Math.random() * carriers.length);
-            return carriers[randomIndex] || carriers[0];
-        },
-
-        getWeightedRandomCarrier(carriers, weights) {
-            // Weighted random selection for more realistic carrier distribution
-            const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
-            let random = Math.random() * totalWeight;
-            
-            for (let i = 0; i < carriers.length; i++) {
-                random -= weights[i];
-                if (random <= 0) {
-                    return carriers[i];
-                }
-            }
-            
-            return carriers[0]; // Fallback
-        },
-
-        getRandomCity(cities) {
-            // Ensure we always get a random city
-            const randomIndex = Math.floor(Math.random() * cities.length);
-            return cities[randomIndex] || cities[0];
-        }
-    }
 };
 
 module.exports = commands;
