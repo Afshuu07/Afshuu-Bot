@@ -1041,40 +1041,39 @@ Try YouTube or TikTok links instead!`);
                 let fileName = null;
                 let mimeType = null;
 
-                // Download media based on message type
+                // Download media based on message type (simplified approach)
                 if (quotedMessage && typeof client.downloadMediaMessage === 'function') {
-                    // Bailey bot - get the quoted message properly
-                    const quotedKey = {
-                        remoteJid: message.key.remoteJid,
-                        fromMe: false,
-                        id: message.message.extendedTextMessage.contextInfo.stanzaId,
-                        participant: message.message.extendedTextMessage.contextInfo.participant
-                    };
-                    
+                    // Bailey bot - create proper message object for download
                     try {
-                        const quotedMsgData = {
-                            key: quotedKey,
+                        // Create a proper message object for downloading
+                        const msgToDownload = {
+                            key: {
+                                remoteJid: message.key.remoteJid,
+                                fromMe: message.message.extendedTextMessage.contextInfo.participant ? false : true,
+                                id: message.message.extendedTextMessage.contextInfo.stanzaId,
+                                participant: message.message.extendedTextMessage.contextInfo.participant
+                            },
                             message: quotedMessage
                         };
-                        const stream = await client.downloadMediaMessage(quotedMsgData);
-                        mediaBuffer = stream;
-                        fileName = `temp_${Date.now()}.${mediaType === 'image' ? 'jpg' : mediaType === 'video' ? 'mp4' : 'bin'}`;
-                        mimeType = quotedMessage.imageMessage?.mimetype || quotedMessage.videoMessage?.mimetype || 'application/octet-stream';
-                    } catch (downloadError) {
-                        logger.error(`Bailey media download error: ${downloadError.message}`);
-                        // Try alternative method
-                        const mediaKey = quotedMessage.imageMessage?.mediaKey || quotedMessage.videoMessage?.mediaKey;
-                        const directPath = quotedMessage.imageMessage?.directPath || quotedMessage.videoMessage?.directPath;
-                        if (mediaKey && directPath) {
-                            // Use the direct download method
-                            const mediaBuffer2 = await client.downloadMediaMessage({ 
-                                key: quotedKey, 
-                                message: quotedMessage 
-                            });
-                            mediaBuffer = mediaBuffer2;
-                            fileName = `temp_${Date.now()}.${mediaType === 'image' ? 'jpg' : mediaType === 'video' ? 'mp4' : 'bin'}`;
-                            mimeType = quotedMessage.imageMessage?.mimetype || quotedMessage.videoMessage?.mimetype || 'application/octet-stream';
+                        
+                        logger.info('Attempting to download media with Bailey...');
+                        const stream = await client.downloadMediaMessage(msgToDownload);
+                        
+                        if (stream && stream.length > 0) {
+                            mediaBuffer = stream;
+                            const ext = mediaType === 'image' ? 'jpg' : mediaType === 'video' ? 'mp4' : 'bin';
+                            fileName = `sticker_temp_${Date.now()}.${ext}`;
+                            mimeType = quotedMessage.imageMessage?.mimetype || 
+                                      quotedMessage.videoMessage?.mimetype || 
+                                      quotedMessage.documentMessage?.mimetype || 
+                                      'application/octet-stream';
+                            logger.info(`Media downloaded successfully: ${fileName}, size: ${stream.length} bytes`);
+                        } else {
+                            throw new Error('Empty media stream');
                         }
+                    } catch (downloadError) {
+                        logger.error(`Bailey media download failed: ${downloadError.message}`);
+                        throw new Error('Failed to download media. Please try again with a different image or video.');
                     }
                 } else if (message.hasQuotedMsg) {
                     // whatsapp-web.js
@@ -1422,75 +1421,49 @@ ${gameList}
 This may take a few minutes for large videos.`);
 
             try {
-                // Get video info first
-                const videoInfo = await enhancedVideoDownloader.getVideoInfo(url);
+                // Try enhanced downloader first, then fallback to simple
+                let result = null;
+                let downloadMethod = 'enhanced';
                 
-                await message.reply(`📹 *Video Information* 📹
-
-🎬 *Title:* ${videoInfo.title}
-👤 *Uploader:* ${videoInfo.uploader}
-⏱️ *Duration:* ${Math.floor(videoInfo.duration / 60)}:${String(videoInfo.duration % 60).padStart(2, '0')}
-👁️ *Views:* ${videoInfo.view_count?.toLocaleString() || 'N/A'}
-🌐 *Platform:* ${videoInfo.platform}
-
-🔄 *Now downloading without watermarks...*`);
-
-                // Use enhanced video downloader
                 try {
-                    const videoResult = await enhancedVideoDownloader.downloadVideoWithoutWatermark(url);
-                    
-                    const videoBuffer = fs.readFileSync(videoResult.path);
-                    
-                    // For Bailey bot, send video
-                    if (typeof client.sendMessage === 'function') {
-                        await client.sendMessage(message.key.remoteJid, {
-                            video: videoBuffer,
-                            caption: `📹 *${videoInfo.title}* 📹\n\n✅ ${videoResult.compressed ? 'HD Compressed' : 'Original HD'} quality\n🌐 Platform: ${videoResult.platform}\n📱 Ready to watch!\n🚀 ${videoResult.watermarkFree ? 'No watermarks' : 'Clean video'}\n💾 Size: ${(videoResult.size / (1024 * 1024)).toFixed(1)}MB\n\n💎 Powered by Afshuu Bot`,
-                            mimetype: 'video/mp4'
-                        });
-                    } else {
-                        // For whatsapp-web.js compatibility
-                        const { MessageMedia } = require('whatsapp-web.js');
-                        const media = MessageMedia.fromFilePath(videoResult.path);
-                        await message.reply(media);
+                    const enhancedDownloader = require('../utils/enhancedVideoDownloader');
+                    result = await enhancedDownloader.downloadVideoWithoutWatermark(url);
+                    logger.info('Enhanced video downloader succeeded');
+                } catch (enhancedError) {
+                    logger.warn(`Enhanced downloader failed: ${enhancedError.message}, trying simple downloader...`);
+                    try {
+                        const simpleDownloader = require('../utils/simpleDownloader');
+                        result = await simpleDownloader.downloadVideo(url);
+                        downloadMethod = 'simple';
+                        logger.info('Simple video downloader succeeded');
+                    } catch (simpleError) {
+                        logger.error(`Both downloaders failed. Enhanced: ${enhancedError.message}, Simple: ${simpleError.message}`);
+                        throw new Error(`All downloaders failed: ${enhancedError.message || simpleError.message}`);
                     }
-                    
-                    // Clean up file
-                    fs.unlinkSync(videoResult.path);
-                    logger.info(`Enhanced video downloaded successfully: ${url}`);
-                    
-                } catch (downloadError) {
-                    logger.error(`Enhanced video download error: ${downloadError.message}`);
-                    
-                    let errorMessage = '❌ *Video Download Failed* ❌\n\n';
-                    
-                    if (downloadError.message.includes('not available') || downloadError.message.includes('private')) {
-                        errorMessage += '🔒 This video is private or unavailable.\n\n💡 Make sure the video is public and accessible!';
-                    } else if (downloadError.message.includes('not supported')) {
-                        errorMessage += '❌ This platform is not supported yet.\n\n🌟 Try: YouTube, TikTok, Instagram, or Twitter!';
-                    } else if (downloadError.message.includes('timeout')) {
-                        errorMessage += '⏰ Download timeout - video might be too large.\n\n💡 Try shorter videos or check your connection!';
-                    } else {
-                        errorMessage += '🚨 Could not download this video.\n\n💡 *Try:*\n• Use a different platform\n• Check if link is valid\n• Use audio download with *.download* instead';
-                    }
-                    
-                    await message.reply(errorMessage);
                 }
                 
-                logger.info(`Video download process completed for: ${url}`);
+                if (result && result.path && fs.existsSync(result.path)) {
+                    const videoBuffer = fs.readFileSync(result.path);
+                    
+                    await client.sendMessage(message.key.remoteJid, {
+                        video: videoBuffer,
+                        caption: `✅ *VIDEO DOWNLOADED* ✅\n\n📱 *Platform:* ${result.platform || 'Auto-detected'}\n💎 *Quality:* ${downloadMethod === 'enhanced' ? 'Premium (Watermark-Free)' : 'High Quality'}\n📁 *Size:* ${(result.size / (1024 * 1024)).toFixed(2)}MB\n🎯 *Method:* ${downloadMethod} downloader\n⚡ *Status:* Successfully processed`,
+                        mimetype: 'video/mp4'
+                    }, { quoted: message });
+                    
+                    // Clean up
+                    try {
+                        fs.unlinkSync(result.path);
+                        logger.info(`Cleaned up downloaded file: ${result.path}`);
+                    } catch (cleanupError) {
+                        logger.error(`Cleanup error: ${cleanupError.message}`);
+                    }
+                } else {
+                    throw new Error('Downloaded file not found or result is invalid');
+                }
             } catch (error) {
                 logger.error(`Video download error: ${error.message}`);
-                await message.reply(`❌ *Video Download Failed*
-
-🚨 *Error:* ${error.message}
-
-💡 *Troubleshooting:*
-• Check if the link is valid
-• Try a different video URL
-• Some platforms may be temporarily unavailable
-• Ensure the video is publicly accessible
-
-🔄 *Please try again or contact support if the issue persists.*`);
+                await message.reply(`❌ *DOWNLOAD FAILED* ❌\n\n🚫 *Error:* ${error.message}\n\n💡 *Suggestions:*\n• Check if the URL is valid\n• Try a different video URL\n• Some platforms may have restrictions\n• Video might be too long or large\n\nSupported platforms: YouTube, TikTok, Instagram, Twitter, Facebook, and 1000+ more!`);
             }
         }
     },

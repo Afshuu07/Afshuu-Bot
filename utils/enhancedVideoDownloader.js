@@ -75,39 +75,50 @@ class EnhancedVideoDownloader {
 
             ytDlp.on('close', (code) => {
                 if (code === 0) {
-                    // Find the downloaded file
-                    const files = fs.readdirSync(this.downloadPath).filter(file => 
-                        file.startsWith(`video_${outputFilename.split('_')[1].split('.')[0]}`)
+                    // Find the downloaded file - check all files in the directory
+                    const allFiles = fs.readdirSync(this.downloadPath);
+                    const videoFiles = allFiles.filter(file => 
+                        file.includes('video_') && (
+                            file.endsWith('.mp4') || file.endsWith('.mkv') || 
+                            file.endsWith('.webm') || file.endsWith('.mov') ||
+                            file.endsWith('.avi') || file.endsWith('.flv')
+                        )
                     );
                     
-                    if (files.length > 0) {
-                        const videoFile = files.find(file => 
-                            file.endsWith('.mp4') || file.endsWith('.mkv') || file.endsWith('.webm') || file.endsWith('.mov')
-                        );
+                    logger.info(`Found ${videoFiles.length} video files: ${videoFiles.join(', ')}`);
+                    
+                    if (videoFiles.length > 0) {
+                        // Get the most recent video file
+                        const videoFile = videoFiles.sort((a, b) => {
+                            const statA = fs.statSync(path.join(this.downloadPath, a));
+                            const statB = fs.statSync(path.join(this.downloadPath, b));
+                            return statB.mtime - statA.mtime;
+                        })[0];
                         
-                        if (videoFile) {
-                            const filePath = path.join(this.downloadPath, videoFile);
-                            const fileSize = fs.statSync(filePath).size;
-                            
-                            if (fileSize > this.maxFileSize) {
-                                // Compress video if too large
-                                this.compressVideo(filePath)
-                                    .then(resolve)
-                                    .catch(reject);
-                            } else {
-                                resolve({
-                                    path: filePath,
-                                    size: fileSize,
-                                    filename: videoFile,
-                                    platform: platform,
-                                    watermarkFree: true
-                                });
-                            }
+                        const filePath = path.join(this.downloadPath, videoFile);
+                        const fileSize = fs.statSync(filePath).size;
+                        
+                        logger.info(`Video downloaded: ${videoFile} (${(fileSize / (1024 * 1024)).toFixed(2)}MB)`);
+                        
+                        if (fileSize > this.maxFileSize) {
+                            // Compress video if too large
+                            logger.info('Video too large, compressing...');
+                            this.compressVideo(filePath)
+                                .then(resolve)
+                                .catch(reject);
                         } else {
-                            reject(new Error('Video file not found after download'));
+                            resolve({
+                                path: filePath,
+                                size: fileSize,
+                                filename: videoFile,
+                                platform: platform,
+                                watermarkFree: true,
+                                compressed: false
+                            });
                         }
                     } else {
-                        reject(new Error('No files downloaded'));
+                        logger.error(`No video files found. All files: ${allFiles.join(', ')}`);
+                        reject(new Error('No video files downloaded'));
                     }
                 } else {
                     logger.error(`yt-dlp failed with code ${code}: ${stderr}`);

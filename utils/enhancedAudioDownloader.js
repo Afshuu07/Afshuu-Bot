@@ -133,39 +133,48 @@ class EnhancedAudioDownloader {
 
             ytDlp.on('close', (code) => {
                 if (code === 0) {
-                    // Find the downloaded audio file
-                    const files = fs.readdirSync(this.downloadPath).filter(file => 
-                        file.startsWith(`audio_${outputFilename.split('_')[1]}`)
+                    // Find the downloaded audio file - check all files in the directory
+                    const allFiles = fs.readdirSync(this.downloadPath);
+                    const audioFiles = allFiles.filter(file => 
+                        file.includes('audio_') && (
+                            file.endsWith('.mp3') || file.endsWith('.m4a') || 
+                            file.endsWith('.ogg') || file.endsWith('.webm') ||
+                            file.endsWith('.aac') || file.endsWith('.wav')
+                        )
                     );
                     
-                    if (files.length > 0) {
-                        const audioFile = files.find(file => 
-                            file.endsWith('.mp3') || file.endsWith('.m4a') || 
-                            file.endsWith('.ogg') || file.endsWith('.webm')
-                        );
+                    logger.info(`Found ${audioFiles.length} audio files: ${audioFiles.join(', ')}`);
+                    
+                    if (audioFiles.length > 0) {
+                        // Get the most recent audio file
+                        const audioFile = audioFiles.sort((a, b) => {
+                            const statA = fs.statSync(path.join(this.downloadPath, a));
+                            const statB = fs.statSync(path.join(this.downloadPath, b));
+                            return statB.mtime - statA.mtime;
+                        })[0];
                         
-                        if (audioFile) {
-                            const filePath = path.join(this.downloadPath, audioFile);
-                            const fileSize = fs.statSync(filePath).size;
-                            
-                            if (fileSize > this.maxFileSize) {
-                                // Compress audio if too large
-                                this.compressAudio(filePath)
-                                    .then(resolve)
-                                    .catch(reject);
-                            } else {
-                                resolve({
-                                    path: filePath,
-                                    size: fileSize,
-                                    filename: audioFile,
-                                    platform: platform,
-                                    quality: 'high'
-                                });
-                            }
+                        const filePath = path.join(this.downloadPath, audioFile);
+                        const fileSize = fs.statSync(filePath).size;
+                        
+                        logger.info(`Audio downloaded: ${audioFile} (${(fileSize / (1024 * 1024)).toFixed(2)}MB)`);
+                        
+                        if (fileSize > this.maxFileSize) {
+                            // Compress audio if too large
+                            logger.info('Audio too large, compressing...');
+                            this.compressAudio(filePath)
+                                .then(resolve)
+                                .catch(reject);
                         } else {
-                            reject(new Error('Audio file not found after download'));
+                            resolve({
+                                path: filePath,
+                                size: fileSize,
+                                filename: audioFile,
+                                platform: platform,
+                                quality: 'high'
+                            });
                         }
                     } else {
+                        logger.error(`No audio files found. All files: ${allFiles.join(', ')}`);
                         reject(new Error('No audio files downloaded'));
                     }
                 } else {
