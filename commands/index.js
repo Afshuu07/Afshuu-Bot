@@ -1043,11 +1043,39 @@ Try YouTube or TikTok links instead!`);
 
                 // Download media based on message type
                 if (quotedMessage && typeof client.downloadMediaMessage === 'function') {
-                    // Bailey bot
-                    const stream = await client.downloadMediaMessage(message, 'buffer');
-                    mediaBuffer = stream;
-                    fileName = `temp_${Date.now()}.${mediaType === 'image' ? 'jpg' : mediaType === 'video' ? 'mp4' : 'bin'}`;
-                    mimeType = quotedMessage.imageMessage?.mimetype || quotedMessage.videoMessage?.mimetype || 'application/octet-stream';
+                    // Bailey bot - get the quoted message properly
+                    const quotedKey = {
+                        remoteJid: message.key.remoteJid,
+                        fromMe: false,
+                        id: message.message.extendedTextMessage.contextInfo.stanzaId,
+                        participant: message.message.extendedTextMessage.contextInfo.participant
+                    };
+                    
+                    try {
+                        const quotedMsgData = {
+                            key: quotedKey,
+                            message: quotedMessage
+                        };
+                        const stream = await client.downloadMediaMessage(quotedMsgData);
+                        mediaBuffer = stream;
+                        fileName = `temp_${Date.now()}.${mediaType === 'image' ? 'jpg' : mediaType === 'video' ? 'mp4' : 'bin'}`;
+                        mimeType = quotedMessage.imageMessage?.mimetype || quotedMessage.videoMessage?.mimetype || 'application/octet-stream';
+                    } catch (downloadError) {
+                        logger.error(`Bailey media download error: ${downloadError.message}`);
+                        // Try alternative method
+                        const mediaKey = quotedMessage.imageMessage?.mediaKey || quotedMessage.videoMessage?.mediaKey;
+                        const directPath = quotedMessage.imageMessage?.directPath || quotedMessage.videoMessage?.directPath;
+                        if (mediaKey && directPath) {
+                            // Use the direct download method
+                            const mediaBuffer2 = await client.downloadMediaMessage({ 
+                                key: quotedKey, 
+                                message: quotedMessage 
+                            });
+                            mediaBuffer = mediaBuffer2;
+                            fileName = `temp_${Date.now()}.${mediaType === 'image' ? 'jpg' : mediaType === 'video' ? 'mp4' : 'bin'}`;
+                            mimeType = quotedMessage.imageMessage?.mimetype || quotedMessage.videoMessage?.mimetype || 'application/octet-stream';
+                        }
+                    }
                 } else if (message.hasQuotedMsg) {
                     // whatsapp-web.js
                     const quotedMsg = await message.getQuotedMessage();

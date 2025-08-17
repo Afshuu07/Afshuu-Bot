@@ -45,7 +45,6 @@ class EnhancedVideoDownloader {
                 '--format', settings.format,
                 '--output', outputPath,
                 '--no-warnings',
-                '--extract-flat', 'false',
                 '--no-playlist', // Download single video only
                 '--no-check-certificate', // Bypass SSL issues
                 '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -57,7 +56,7 @@ class EnhancedVideoDownloader {
 
             // Add compression for large files
             if (options.compress !== false) {
-                ytDlpArgs.push('--postprocessor-args', 'ffmpeg:-vf scale=min(1280\\,iw):min(720\\,ih) -crf 28');
+                ytDlpArgs.push('--postprocessor-args', 'ffmpeg:-vf scale=min(1280,iw):min(720,ih) -crf 28');
             }
 
             logger.info(`Downloading video from ${platform} with args: ${ytDlpArgs.join(' ')}`);
