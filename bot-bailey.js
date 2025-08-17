@@ -40,7 +40,7 @@ class AfshuuBaileyBot {
             // Create socket connection
             this.sock = makeWASocket({
                 auth: state,
-                printQRInTerminal: false, // We'll handle QR display ourselves
+                printQRInTerminal: true, // Enable QR code display for scanning
                 logger: P({ level: config.LOG_LEVEL || 'info' }),
                 browser: ['Afshuu Bot', 'Chrome', '3.0'],
                 connectTimeoutMs: 60000,
