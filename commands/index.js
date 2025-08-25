@@ -1047,7 +1047,7 @@ Try YouTube or TikTok links instead!`);
             let mediaType = null;
 
             try {
-                // Check for quoted media with comprehensive detection
+                // Enhanced media detection for Bailey messages
                 if (message.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
                     quotedMessage = message.message.extendedTextMessage.contextInfo.quotedMessage;
                     if (quotedMessage.imageMessage) {
@@ -1068,6 +1068,27 @@ Try YouTube or TikTok links instead!`);
                     const quotedMsg = await message.getQuotedMessage();
                     hasMedia = quotedMsg.hasMedia;
                     mediaType = quotedMsg.type;
+                }
+
+                // Alternative: Check if this message itself has media (direct media, not quoted)
+                if (!hasMedia && message.message) {
+                    if (message.message.imageMessage) {
+                        hasMedia = true;
+                        mediaType = 'image';
+                        quotedMessage = message.message;
+                    } else if (message.message.videoMessage) {
+                        hasMedia = true;
+                        mediaType = 'video';
+                        quotedMessage = message.message;
+                    } else if (message.message.documentMessage) {
+                        hasMedia = true;
+                        mediaType = 'document';
+                        quotedMessage = message.message;
+                    } else if (message.message.stickerMessage) {
+                        hasMedia = true;
+                        mediaType = 'sticker';
+                        quotedMessage = message.message;
+                    }
                 }
             } catch (error) {
                 logger.warn(`Media detection error: ${error.message}`);
@@ -1113,82 +1134,119 @@ Try YouTube or TikTok links instead!`);
                 let tempPath = null;
                 const timestamp = Date.now();
 
-                // UNRESTRICTED MEDIA DOWNLOAD - Enhanced Bailey approach
+                // UNRESTRICTED MEDIA DOWNLOAD - Multiple robust methods
                 if (quotedMessage && typeof client.downloadMediaMessage === 'function') {
-                    try {
-                        // Method 1: Direct Bailey download (most reliable)
-                        const mediaMessage = quotedMessage[mediaType + 'Message'] || quotedMessage.stickerMessage;
-                        
-                        if (mediaMessage) {
-                            // Create proper message structure for Bailey
-                            const downloadMessage = {
-                                key: {
-                                    remoteJid: message.key.remoteJid,
-                                    fromMe: message.message.extendedTextMessage.contextInfo.participant ? false : true,
-                                    id: message.message.extendedTextMessage.contextInfo.stanzaId || message.key.id,
-                                    participant: message.message.extendedTextMessage.contextInfo.participant
-                                },
-                                message: quotedMessage
-                            };
-                            
-                            logger.info('🔄 Attempting unrestricted media download...');
-                            mediaBuffer = await client.downloadMediaMessage(downloadMessage);
-                            
-                            // Determine file extension based on mimetype
-                            let fileExt = 'jpg';
-                            if (mediaMessage.mimetype) {
-                                if (mediaMessage.mimetype.includes('png')) fileExt = 'png';
-                                else if (mediaMessage.mimetype.includes('gif')) fileExt = 'gif';
-                                else if (mediaMessage.mimetype.includes('webp')) fileExt = 'webp';
-                                else if (mediaMessage.mimetype.includes('mp4')) fileExt = 'mp4';
-                                else if (mediaMessage.mimetype.includes('video')) fileExt = 'mp4';
-                                else if (mediaMessage.mimetype.includes('document')) fileExt = 'jpg';
-                            }
-                            
-                            tempPath = `./temp/sticker_input_${timestamp}.${fileExt}`;
-                            logger.info(`✅ Media downloaded successfully: ${mediaBuffer.length} bytes`);
+                    const mediaMessage = quotedMessage[mediaType + 'Message'] || quotedMessage.stickerMessage;
+                    
+                    if (mediaMessage) {
+                        // Determine file extension from mimetype
+                        let fileExt = 'jpg';
+                        if (mediaMessage.mimetype) {
+                            if (mediaMessage.mimetype.includes('png')) fileExt = 'png';
+                            else if (mediaMessage.mimetype.includes('gif')) fileExt = 'gif';
+                            else if (mediaMessage.mimetype.includes('webp')) fileExt = 'webp';
+                            else if (mediaMessage.mimetype.includes('mp4')) fileExt = 'mp4';
+                            else if (mediaMessage.mimetype.includes('video')) fileExt = 'mp4';
+                            else if (mediaMessage.mimetype.includes('jpeg')) fileExt = 'jpg';
                         }
-                    } catch (baileyError) {
-                        logger.warn(`Bailey download failed: ${baileyError.message}, trying alternative methods...`);
-                        
-                        // Method 2: Alternative Bailey approach
-                        try {
-                            // Create simpler message structure
-                            const simpleMessage = {
-                                key: message.key,
-                                message: quotedMessage
-                            };
-                            
-                            mediaBuffer = await client.downloadMediaMessage(simpleMessage);
-                            tempPath = `./temp/sticker_input_${timestamp}.jpg`;
-                            logger.info(`✅ Alternative download successful: ${mediaBuffer.length} bytes`);
-                        } catch (altError) {
-                            logger.warn(`Alternative method failed: ${altError.message}`);
-                            
-                            // Method 3: Direct media access (if available)
-                            const mediaInfo = quotedMessage[mediaType + 'Message'] || quotedMessage.stickerMessage;
-                            if (mediaInfo && (mediaInfo.url || mediaInfo.directPath)) {
-                                try {
-                                    // Try to access media directly through Bailey's internal methods
-                                    const directBuffer = await client.downloadMediaMessage({
-                                        key: { id: 'dummy' },
-                                        message: { [mediaType + 'Message']: mediaInfo }
-                                    });
-                                    mediaBuffer = directBuffer;
-                                    tempPath = `./temp/sticker_input_${timestamp}.jpg`;
-                                    logger.info(`✅ Direct access successful: ${mediaBuffer.length} bytes`);
-                                } catch (directError) {
-                                    logger.error(`All download methods failed: ${directError.message}`);
+                        tempPath = `./temp/sticker_input_${timestamp}.${fileExt}`;
+
+                        // Method 1: Try with contextInfo (quoted message)
+                        if (!mediaBuffer && message.message?.extendedTextMessage?.contextInfo) {
+                            try {
+                                const contextInfo = message.message.extendedTextMessage.contextInfo;
+                                const downloadMessage = {
+                                    key: {
+                                        remoteJid: message.key.remoteJid,
+                                        fromMe: false,
+                                        id: contextInfo.stanzaId,
+                                        participant: contextInfo.participant
+                                    },
+                                    message: quotedMessage
+                                };
+                                
+                                logger.info('🔄 Method 1: Downloading with contextInfo...');
+                                mediaBuffer = await client.downloadMediaMessage(downloadMessage);
+                                logger.info(`✅ Method 1 successful: ${mediaBuffer.length} bytes`);
+                            } catch (error) {
+                                logger.warn(`Method 1 failed: ${error.message}`);
+                            }
+                        }
+
+                        // Method 2: Direct message download (if this is the actual media message)
+                        if (!mediaBuffer) {
+                            try {
+                                logger.info('🔄 Method 2: Direct message download...');
+                                mediaBuffer = await client.downloadMediaMessage(message);
+                                logger.info(`✅ Method 2 successful: ${mediaBuffer.length} bytes`);
+                            } catch (error) {
+                                logger.warn(`Method 2 failed: ${error.message}`);
+                            }
+                        }
+
+                        // Method 3: Simple structure with quoted message
+                        if (!mediaBuffer) {
+                            try {
+                                const simpleMessage = {
+                                    key: message.key,
+                                    message: quotedMessage
+                                };
+                                
+                                logger.info('🔄 Method 3: Simple structure download...');
+                                mediaBuffer = await client.downloadMediaMessage(simpleMessage);
+                                logger.info(`✅ Method 3 successful: ${mediaBuffer.length} bytes`);
+                            } catch (error) {
+                                logger.warn(`Method 3 failed: ${error.message}`);
+                            }
+                        }
+
+                        // Method 4: Create new message with just the media
+                        if (!mediaBuffer) {
+                            try {
+                                const mediaOnlyMessage = {
+                                    key: {
+                                        remoteJid: message.key.remoteJid,
+                                        fromMe: false,
+                                        id: `media_${timestamp}`
+                                    },
+                                    message: {}
+                                };
+                                mediaOnlyMessage.message[mediaType + 'Message'] = mediaMessage;
+                                
+                                logger.info('🔄 Method 4: Media-only message download...');
+                                mediaBuffer = await client.downloadMediaMessage(mediaOnlyMessage);
+                                logger.info(`✅ Method 4 successful: ${mediaBuffer.length} bytes`);
+                            } catch (error) {
+                                logger.warn(`Method 4 failed: ${error.message}`);
+                            }
+                        }
+
+                        // Method 5: Try with downloadAndSaveMediaMessage if available
+                        if (!mediaBuffer && typeof client.downloadAndSaveMediaMessage === 'function') {
+                            try {
+                                logger.info('🔄 Method 5: DownloadAndSave attempt...');
+                                const savedPath = await client.downloadAndSaveMediaMessage(message, './temp/');
+                                if (savedPath && fs.existsSync(savedPath)) {
+                                    mediaBuffer = fs.readFileSync(savedPath);
+                                    fs.unlinkSync(savedPath); // Clean up
+                                    logger.info(`✅ Method 5 successful: ${mediaBuffer.length} bytes`);
                                 }
+                            } catch (error) {
+                                logger.warn(`Method 5 failed: ${error.message}`);
                             }
                         }
                     }
                 } else if (message.hasQuotedMsg) {
                     // whatsapp-web.js style
-                    const quotedMsg = await message.getQuotedMessage();
-                    const media = await quotedMsg.downloadMedia();
-                    mediaBuffer = Buffer.from(media.data, 'base64');
-                    tempPath = `./temp/sticker_input_${timestamp}.jpg`;
+                    try {
+                        const quotedMsg = await message.getQuotedMessage();
+                        const media = await quotedMsg.downloadMedia();
+                        mediaBuffer = Buffer.from(media.data, 'base64');
+                        tempPath = `./temp/sticker_input_${timestamp}.jpg`;
+                        logger.info(`✅ WhatsApp-web.js download successful: ${mediaBuffer.length} bytes`);
+                    } catch (error) {
+                        logger.warn(`WhatsApp-web.js download failed: ${error.message}`);
+                    }
                 }
 
                 if (!mediaBuffer || mediaBuffer.length === 0) {
