@@ -366,28 +366,39 @@ Welcome to the Afshuu Bot family! 🌟`
             const category = args[0]?.toLowerCase();
             
             if (category === 'media') {
-                const mediaMenu = `🎵━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🎵
-🎶        *MEDIA COMMANDS MENU*        🎶
-🎵━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🎵
+                const mediaMenu = `🚀━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🚀
+🔓    *UNRESTRICTED MEDIA CENTER*    🔓
+🚀━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🚀
 
-🎧 *Audio Downloads:*
-• *.download [link]* - Download audio from any platform
-• *.audio [link]* - High quality audio download
-• *.mp3 [link]* - Convert to MP3 format
+💥 *RESTRICTION-FREE AUDIO:*
+• *.download [link]* - Bypass ALL platform restrictions
+• *.audio [link]* - Maximum quality audio extraction
+• *.mp3 [link]* - Universal MP3 conversion
 
-📹 *Video Downloads:*
-• *.video [link]* - Download videos without watermarks
-• *.hd [link]* - Download in HD quality (up to 720p)
+🎬 *WATERMARK-FREE VIDEOS:*
+• *.video [link]* - Remove watermarks from ANY video
+• *.hd [link]* - Premium HD downloads (up to 4K)
 
-🎨 *Media Tools:*
-• *.sticker* - Convert images to stickers
-• *.scan [url]* - Security scan for links
+🛠️ *MEDIA LIBERATION TOOLS:*
+• *.sticker* - Professional media conversion
+• *.scan [url]* - Platform restriction analysis
 
-🌐 *Supported Platforms:*
-YouTube • TikTok • Instagram • Facebook
-Twitter/X • Vimeo • Dailymotion • Twitch
-Spotify • SoundCloud • Bandcamp • Mixcloud
-And 1000+ more platforms!
+🌍 *UNIVERSAL PLATFORM SUPPORT:*
+✅ YouTube • TikTok • Instagram • Facebook
+✅ Twitter/X • Vimeo • Dailymotion • Twitch  
+✅ SoundCloud • Bandcamp • Mixcloud
+✅ Reddit • Telegram • Discord • Pinterest
+✅ LinkedIn • Snapchat • WhatsApp Status
+✅ Plus 1000+ restricted & private platforms!
+
+🔥 *BREAKTHROUGH FEATURES:*
+🚫 NO download limits or restrictions
+🚫 NO watermarks or platform branding
+🚫 NO quality degradation
+🚫 NO blocked or private content
+✅ Maximum quality extraction
+✅ Premium bypass technology
+✅ Universal compatibility
 
 📱 Back to main menu: *.menu*
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
@@ -458,46 +469,85 @@ And 1000+ more platforms!
                 return;
             }
 
+            if (category === 'tutorial') {
+                const tutorialMenu = `📚━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━📚
+🎓        *TUTORIAL CENTER*        🎓
+📚━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━📚
+
+🌟 *INTERACTIVE LEARNING SYSTEM:*
+• *.tutorial 1* - Getting Started Guide
+• *.tutorial 2* - Basic Commands Overview
+• *.tutorial 3* - Audio Download Mastery
+• *.tutorial 4* - Security Features Guide
+• *.tutorial 5* - Pro Tips & Advanced Features
+
+🎯 *QUICK START TUTORIALS:*
+• *.tutorial* - Start from beginning
+• *.tutorial [1-5]* - Jump to specific step
+
+📖 *LEARNING MODULES:*
+🚀 Beginner: Bot basics and navigation
+🎵 Media: Download audio/video from anywhere  
+🛡️ Security: Protection and safety features
+👥 Groups: Management and tagging systems
+🎮 Advanced: Pro tips and hidden features
+
+💡 *TUTORIAL FEATURES:*
+✅ Step-by-step guidance
+✅ Interactive examples
+✅ Real-time practice
+✅ Progressive difficulty
+✅ Comprehensive coverage
+
+🎓 *Start your learning journey!*
+Type *.tutorial* to begin or choose a specific step.
+
+📱 Back to main menu: *.menu*
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+                await message.reply(tutorialMenu);
+                return;
+            }
+
             // Professional animated main menus
             const mainMenus = [
                 `🌟━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🌟
 🏆      AFSHUU PROFESSIONAL SUITE      🏆
 🌟━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━🌟
 
-🎯 *ENTERPRISE COMMAND CENTER*
+🎯 *UNRESTRICTED DOWNLOAD CENTER*
 
-🚀 *QUICK ACCESS DASHBOARD:*
+🚀 *SYSTEM STATUS:*
 • *.alive* - System performance showcase
 • *.status* - Real-time health monitoring  
-• *.tutorial* - Interactive AI guidance system
 
 💎 *PROFESSIONAL MODULES:*
-🎬 *.menu media* - Cinema-quality downloads
+🎬 *.menu media* - Unrestricted downloads (1000+ platforms)
 🛡️ *.menu security* - Military-grade protection
 👥 *.menu group* - Corporate management tools
 🎮 *.games [type]* - AI gaming consultant
+📚 *.menu tutorial* - Interactive learning system
 
-⚡ *PREMIUM FEATURES:*
-🎵 *.download [link]* - Studio-grade audio extraction
-📹 *.video [link]* - HD video processing (watermark-free)
+⚡ *RESTRICTION-FREE DOWNLOADS:*
+🎵 *.download [link]* - Audio from ANY platform (no limits)
+📹 *.video [link]* - Videos without watermarks (any site)
 🎯 *.tagall [message]* - Unlimited member tagging
 🎨 *.sticker* - Professional media conversion
 🛡️ *.security* - Advanced threat monitoring
 
-🌟 *ELITE CAPABILITIES:*
-• Quantum media processing engine
-• NASA-level status monitoring
-• Hollywood-grade video downloads
-• University-level tutorial system
-• Military-grade spam protection
+🌟 *BREAKTHROUGH CAPABILITIES:*
+• Bypasses platform restrictions
+• Removes all watermarks automatically
+• Works on 1000+ platforms
+• No download limits or blocks
+• Premium quality extraction
 
-💼 *BUSINESS INTELLIGENCE:*
-Version: Professional 3.0 Enterprise
-AI Core: Advanced neural network
-Platform: Multi-dimensional support
-Performance: 99.9% uptime guarantee
+💼 *PLATFORM LIBERATION:*
+Version: Unrestricted 4.0 Pro
+AI Core: Restriction-bypass engine
+Coverage: Universal platform support
+Capability: 100% restriction removal
 
-🏆 Excellence delivered daily! 🏆
+🏆 Download anything, anywhere! 🏆
 🌟✨💎⚡🚀🎯🎬🛡️👥🎮💼🌟`,
 
                 `🎭═════════════════════════════════🎭
@@ -516,6 +566,7 @@ Performance: 99.9% uptime guarantee
 🛡️ *.menu security* - Dragon protection spells
 👥 *.menu group* - Court herald systems
 🎮 *.games [type]* - Gaming crystal oracle
+📚 *.menu tutorial* - Enchanted learning scrolls
 
 🎨 *CREATIVE MASTERPIECES:*
 🎵 *.download [link]* - Bardic song conjuring
@@ -552,10 +603,11 @@ Magic Level: Legendary tier
 • *.tutorial* - Combat training simulation
 
 🛰️ *MISSION MODULES:*
-🎥 *.menu media* - Quantum data extraction
+🎥 *.menu media* - Quantum data extraction (unrestricted)
 🛡️ *.menu security* - Cyber defense matrix
 👥 *.menu group* - Communication networks
 🎮 *.games [type]* - Entertainment protocols
+📚 *.menu tutorial* - Combat training simulation
 
 🔮 *ADVANCED WEAPONRY:*
 🎵 *.download [link]* - Data teleportation beam
