@@ -1521,42 +1521,22 @@ This may take a few minutes for large videos.`);
     },
 
     hidetag: {
-        description: 'Tag all group members (simple)',
-        usage: '.hidetag [message]',
+        description: 'Tag all group members silently (no message from bot)',
+        usage: '.hidetag',
         ownerOnly: false,
         groupOnly: true,
         async execute(client, message, args, context) {
             try {
-                const chat = await message.getChat();
-                
-                if (!chat.isGroup) {
-                    await message.reply('❌ This command only works in groups.');
-                    return;
-                }
-
-                const text = args.join(' ') || 'hidetag';
-                const mentions = [];
-                
-                // Get participants in Bailey format
-                for (let participant of chat.participants) {
-                    if (participant.id && participant.id.user) {
-                        mentions.push(`${participant.id.user}@s.whatsapp.net`);
-                    } else if (typeof participant === 'string') {
-                        mentions.push(participant);
-                    } else if (participant.id) {
-                        mentions.push(participant.id);
-                    }
-                }
-
-                // Simple hidetag - just send the message with mentions
+                // For Bailey bot - handle differently
                 if (typeof client.sendMessage === 'function') {
-                    // Bailey bot
-                    await client.sendMessage(message.key.remoteJid, {
-                        text: text,
-                        mentions: mentions
-                    });
+                    // Get group metadata to get all participants
+                    const groupMetadata = await client.groupMetadata(message.key.remoteJid);
+                    const participants = groupMetadata.participants;
                     
-                    // Delete original command message
+                    // Create mentions array
+                    const mentions = participants.map(participant => participant.id);
+                    
+                    // Delete the original command message immediately
                     try {
                         await client.sendMessage(message.key.remoteJid, {
                             delete: message.key
@@ -1564,20 +1544,40 @@ This may take a few minutes for large videos.`);
                     } catch (error) {
                         // Silently ignore if can't delete
                     }
+                    
+                    // Send invisible mention message (empty text with mentions)
+                    await client.sendMessage(message.key.remoteJid, {
+                        text: '‎', // Invisible character
+                        mentions: mentions
+                    });
+                    
+                    logger.info(`Silent hidetag executed for ${mentions.length} members`);
                 } else {
                     // whatsapp-web.js bot
-                    await chat.sendMessage(text, { mentions });
+                    const chat = await message.getChat();
+                    
+                    if (!chat.isGroup) {
+                        return; // Silently ignore if not in group
+                    }
+
+                    const mentions = chat.participants.map(participant => participant.id._serialized);
+                    
+                    // Delete original command
                     try {
                         await message.delete(true);
                     } catch (error) {
                         // Silently ignore if can't delete
                     }
+                    
+                    // Send invisible mention
+                    await chat.sendMessage('‎', { mentions });
+                    
+                    logger.info(`Silent hidetag executed for ${mentions.length} members`);
                 }
                 
-                logger.info(`Simple hidetag sent to ${mentions.length} members`);
             } catch (error) {
                 logger.error(`Hidetag error: ${error.message}`);
-                await message.reply('❌ Error executing hidetag command.');
+                // Don't send error message, just log it
             }
         }
     },

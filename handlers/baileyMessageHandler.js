@@ -58,13 +58,56 @@ class BaileyMessageHandler {
             // Create Bailey-compatible message context
             const baileyContext = this.createBaileyContext(sock, message, sender, isGroup);
 
+            // Add reaction first to show bot is active and responding
+            try {
+                await sock.sendMessage(message.key.remoteJid, {
+                    react: {
+                        text: '⚡', // Lightning bolt to show instant response
+                        key: message.key
+                    }
+                });
+                console.log(`⚡ Bot reacted to command: ${commandName}`);
+            } catch (reactionError) {
+                console.log(`⚠️ Could not add reaction: ${reactionError.message}`);
+            }
+
+            // Small delay to show reaction before processing
+            await new Promise(resolve => setTimeout(resolve, 500));
+
             // Execute command
             await command.execute(sock, baileyContext, args, context);
+
+            // Add success reaction after command execution (for non-hidetag commands)
+            if (commandName !== 'hidetag') {
+                try {
+                    await sock.sendMessage(message.key.remoteJid, {
+                        react: {
+                            text: '✅', // Checkmark to show completion
+                            key: message.key
+                        }
+                    });
+                    console.log(`✅ Bot confirmed completion for: ${commandName}`);
+                } catch (reactionError) {
+                    console.log(`⚠️ Could not add completion reaction: ${reactionError.message}`);
+                }
+            }
 
             logger.info(`Command executed: ${commandName} by ${sender}`);
 
         } catch (error) {
             logger.error(`Error handling message: ${error.message}`);
+            
+            // Add error reaction
+            try {
+                await sock.sendMessage(context.message.key.remoteJid, {
+                    react: {
+                        text: '❌', // Error reaction
+                        key: context.message.key
+                    }
+                });
+            } catch (reactionError) {
+                console.log(`⚠️ Could not add error reaction: ${reactionError.message}`);
+            }
             
             try {
                 await sock.sendMessage(context.message.key.remoteJid, {
